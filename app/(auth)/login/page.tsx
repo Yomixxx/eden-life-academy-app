@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { signIn } from '@/app/actions/auth';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 type State = { error?: string };
 
@@ -41,7 +42,7 @@ export default function LoginPage() {
           }}
         />
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Image src="/logo.jpg" alt="Eden Life Experience Centre" width={74} height={74} style={{ height: 74, width: 'auto' }} />
+          <Image src="/logo.png" alt="Eden Life Experience Centre" width={74} height={74} style={{ height: 74, width: 'auto' }} />
           <span
             style={{
               fontFamily: 'var(--font-display)',
@@ -143,6 +144,14 @@ export default function LoginPage() {
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={pending}>
             {pending ? 'Signing in…' : 'Sign In'}
           </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.6rem 0', color: 'var(--text-lo)', fontSize: '.72rem', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            <span style={{ height: 1, background: 'var(--border)', flex: 1, display: 'block' }} />
+            or
+            <span style={{ height: 1, background: 'var(--border)', flex: 1, display: 'block' }} />
+          </div>
+
+          <GoogleSignInButton />
 
           <p style={{ marginTop: '1.75rem', textAlign: 'center', fontSize: '.88rem', color: 'var(--text-lo)' }}>
             New to Eden Life Academy? <Link href="/signup" style={{ color: 'var(--eden)', fontWeight: 600 }}>Create an account</Link>
