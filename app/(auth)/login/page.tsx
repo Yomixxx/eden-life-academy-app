@@ -42,7 +42,7 @@ export default function LoginPage() {
           }}
         />
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Image src="/logo.png" alt="Eden Life Experience Centre" width={74} height={74} style={{ height: 74, width: 'auto' }} />
+          <Image src="/logo-white.png" alt="Eden Life Experience Centre" width={74} height={74} style={{ height: 74, width: 'auto' }} />
           <span
             style={{
               fontFamily: 'var(--font-display)',
@@ -111,6 +111,22 @@ export default function LoginPage() {
 
       <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2.5rem', background: 'var(--bg-0)' }}>
         <form action={formAction} style={{ width: '100%', maxWidth: 400 }}>
+          <div className="logo-mobile-auth" style={{ display: 'none', flexDirection: 'column', alignItems: 'center', gap: '.6rem', marginBottom: '2rem' }}>
+            <Image src="/logo-white.png" alt="Eden Life Experience Centre" width={60} height={60} style={{ height: 60, width: 'auto' }} />
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 700,
+                fontSize: '.64rem',
+                letterSpacing: '.32em',
+                textTransform: 'uppercase',
+                color: 'var(--eden)',
+              }}
+            >
+              Academy
+            </span>
+          </div>
+
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.85rem', color: 'var(--text-hi)', letterSpacing: '-.02em' }}>
             Welcome back
           </h2>
@@ -158,6 +174,14 @@ export default function LoginPage() {
           </p>
         </form>
       </main>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .brand-panel { display: none !important; }
+          .logo-mobile-auth { display: flex !important; }
+          .auth-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }
