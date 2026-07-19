@@ -16,16 +16,26 @@ const DOCUMENT_LABELS: Record<string, string> = {
   'application/msword': 'DOC',
 };
 
+const DOCUMENT_EXTENSIONS = new Set(['pdf', 'pptx', 'ppt', 'docx', 'doc']);
+
+function extensionOf(file: File) {
+  return file.name.split('.').pop()?.toLowerCase();
+}
+
 export function isVideoFile(file: File) {
   return file.type.startsWith('video/');
 }
 
 export function isDocumentFile(file: File) {
-  return DOCUMENT_TYPES.has(file.type);
+  if (DOCUMENT_TYPES.has(file.type)) return true;
+  // Some browsers/OSes report an empty or generic MIME type for .doc/.ppt
+  // files, so fall back to the file extension.
+  const ext = extensionOf(file);
+  return !!ext && DOCUMENT_EXTENSIONS.has(ext);
 }
 
 export function documentLabel(file: File) {
-  return DOCUMENT_LABELS[file.type] ?? file.name.split('.').pop()?.toUpperCase() ?? 'File';
+  return DOCUMENT_LABELS[file.type] ?? extensionOf(file)?.toUpperCase() ?? 'File';
 }
 
 export async function uploadLessonFile(file: File, courseId: string) {
