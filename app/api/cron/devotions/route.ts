@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DEVOTION_BANK } from '@/lib/devotion-bank';
-import { sendEmail } from '@/lib/resend';
+import { sendEmail } from '@/lib/gmail';
 import type { DailyDevotion, DevotionSubscriber } from '@/lib/types';
 
 const EPOCH = new Date('2026-01-01T00:00:00Z').getTime();

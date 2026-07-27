@@ -24,8 +24,9 @@ Required env vars (also needed as Vercel project env vars for production):
 For the daily devotion email (see below), also set:
 
 - `SUPABASE_SERVICE_ROLE_KEY` — from Supabase project settings, used only by the cron route to bypass RLS
-- `RESEND_API_KEY` — from [resend.com](https://resend.com), after verifying the sending domain
-- `DEVOTION_FROM_EMAIL` — the verified "from" address, e.g. `Eden Life Academy <devotions@edenlifeng.org>`
+- `GOOGLE_SERVICE_ACCOUNT_KEY` — the full JSON key (as a single-line string) for a Google Cloud service
+  account with domain-wide delegation for the `gmail.send` scope — see below
+- `DEVOTION_FROM_EMAIL` — the Workspace mailbox being impersonated, e.g. `communication@edenlifeng.org`
 - `CRON_SECRET` — any random string; Vercel sends it as a bearer token when triggering the cron job
 
 ## How courses work
@@ -44,6 +45,24 @@ else gets read-only access to published content they're enrolled in.
 A Vercel Cron job (`vercel.json`, `12 6 * * *`) hits `/api/cron/devotions` every morning. It picks
 the next entry from a free, curated verse-and-reflection bank (`lib/devotion-bank.ts` — no external
 AI API call), inserts it into `daily_devotions` for the day if missing, and emails every subscribed
-row in `devotion_subscribers` via the Resend API. Students can opt in/out from the dashboard; the
-job is idempotent per day via `daily_devotions.sent_at`, so a re-run or a second cron trigger on the
-same day won't double-send.
+row in `devotion_subscribers` through the Gmail API (`lib/gmail.ts`). Students can opt in/out from
+the dashboard; the job is idempotent per day via `daily_devotions.sent_at`, so a re-run or a second
+cron trigger on the same day won't double-send.
+
+Email delivery uses a Google Cloud **service account with domain-wide delegation**, not per-user
+OAuth — this avoids the "Testing mode" 7-day refresh-token expiry that silently killed the previous
+Gmail-based integration. To set it up:
+
+1. **Google Cloud Console** (console.cloud.google.com), in a project for this app:
+   - Enable the **Gmail API** (APIs & Services → Library).
+   - Create a **Service Account** (IAM & Admin → Service Accounts), then create and download a
+     JSON key for it.
+   - Note the service account's numeric **Client ID** (Details tab).
+2. **Google Workspace Admin Console** (admin.google.com), as a super admin:
+   - Security → Access and data control → API controls → **Domain-wide Delegation** → Add new.
+   - Client ID: the service account's numeric client ID from step 1.
+   - OAuth scope: `https://www.googleapis.com/auth/gmail.send`
+3. Set the downloaded JSON key as the `GOOGLE_SERVICE_ACCOUNT_KEY` env var (paste the whole file
+   contents as one line) and `DEVOTION_FROM_EMAIL` to the Workspace mailbox it should send as
+   (e.g. `communication@edenlifeng.org`) — the service account impersonates this mailbox, it does
+   not need its own inbox.
