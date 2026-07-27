@@ -2,14 +2,16 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUserAndProfile } from '@/lib/get-profile';
 import Nav from '@/components/Nav';
-import type { Course, Enrollment } from '@/lib/types';
+import DevotionSubscribeToggle from '@/components/DevotionSubscribeToggle';
+import type { Course, DailyDevotion, DevotionSubscriber, Enrollment } from '@/lib/types';
 import { CATEGORY_LABELS, LEVEL_LABELS } from '@/lib/types';
 
 export default async function DashboardPage() {
   const { user, profile } = await getCurrentUserAndProfile();
   const supabase = await createClient();
+  const today = new Date().toISOString().slice(0, 10);
 
-  const [{ data: courses }, { data: enrollments }] = await Promise.all([
+  const [{ data: courses }, { data: enrollments }, { data: devotion }, { data: subscription }] = await Promise.all([
     supabase
       .from('courses')
       .select('*')
@@ -21,6 +23,12 @@ export default async function DashboardPage() {
       .select('*')
       .eq('user_id', user!.id)
       .returns<Enrollment[]>(),
+    supabase.from('daily_devotions').select('*').eq('date', today).maybeSingle<DailyDevotion>(),
+    supabase
+      .from('devotion_subscribers')
+      .select('*')
+      .eq('user_id', user!.id)
+      .maybeSingle<DevotionSubscriber>(),
   ]);
 
   const enrolledIds = new Set((enrollments ?? []).map((e) => e.course_id));
@@ -38,6 +46,19 @@ export default async function DashboardPage() {
             Continue your discipleship journey below.
           </p>
         </div>
+
+        {devotion && (
+          <div className="card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+            <span className="badge">Today&rsquo;s Word — {devotion.scripture_reference}</span>
+            <p style={{ margin: '.9rem 0', fontStyle: 'italic', color: 'var(--text-lo)', lineHeight: 1.6 }}>
+              &ldquo;{devotion.scripture_text}&rdquo;
+            </p>
+            <p style={{ fontSize: '.88rem', color: 'var(--text-lo)', lineHeight: 1.6, marginBottom: '1rem' }}>
+              {devotion.body}
+            </p>
+            <DevotionSubscribeToggle subscribed={subscription?.subscribed ?? false} />
+          </div>
+        )}
 
         {(!courses || courses.length === 0) ? (
           <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center' }}>

@@ -50,6 +50,26 @@ export interface Enrollment {
   completed_at: string | null;
 }
 
+export interface DailyDevotion {
+  id: string;
+  date: string;
+  scripture_reference: string;
+  scripture_text: string;
+  body: string;
+  created_at: string;
+  sent_at: string | null;
+}
+
+export interface DevotionSubscriber {
+  id: string;
+  email: string;
+  full_name: string | null;
+  user_id: string | null;
+  subscribed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export const CATEGORY_LABELS: Record<CourseCategory, string> = {
   foundation: 'Foundation',
   leadership: 'Leadership',
