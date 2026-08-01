@@ -53,7 +53,6 @@ export default function Nav({ profile }: { profile: Profile | null }) {
 
         <nav style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', fontSize: '.85rem' }}>
           <Link href="/dashboard" style={{ color: 'var(--text-md)' }}>Courses</Link>
-          <Link href="/profile" style={{ color: 'var(--text-md)' }}>Profile</Link>
           {profile?.role === 'admin' && (
             <Link href="/admin" style={{ color: 'var(--eden)', fontWeight: 600 }}>Admin</Link>
           )}
