@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { createLesson } from '@/app/actions/lessons';
-import { uploadLessonFile, isVideoFile, isDocumentFile, documentLabel } from '@/lib/upload';
+import { uploadLessonFile, isVideoFile, isDocumentFile, documentLabel, MAX_LESSON_FILE_SIZE_BYTES } from '@/lib/upload';
 
 const ACCEPT = '.pdf,.pptx,.ppt,.docx,.doc,video/mp4,video/quicktime,video/webm,video/x-matroska';
 
@@ -20,6 +20,11 @@ export default function AddLessonForm({ courseId, nextSortOrder }: { courseId: s
     setError('');
     if (f && !isVideoFile(f) && !isDocumentFile(f)) {
       setError('Unsupported file type. Upload a PDF, PPTX, DOCX, or video file.');
+      setFile(null);
+      return;
+    }
+    if (f && f.size > MAX_LESSON_FILE_SIZE_BYTES) {
+      setError('File is too large. Lesson files must be 100MB or smaller.');
       setFile(null);
       return;
     }
@@ -130,7 +135,7 @@ export default function AddLessonForm({ courseId, nextSortOrder }: { courseId: s
           style={{ padding: '.6rem' }}
         />
         <p style={{ fontSize: '.75rem', color: 'var(--text-dim)', marginTop: '.5rem' }}>
-          Accepted: PDF, PowerPoint (.pptx/.ppt), Word (.docx/.doc), or video (MP4/MOV/WebM/MKV). Up to 1GB.
+          Accepted: PDF, PowerPoint (.pptx/.ppt), Word (.docx/.doc), or video (MP4/MOV/WebM/MKV). Up to 100MB.
           {file && (
             <span style={{ display: 'block', color: 'var(--eden)', marginTop: '.25rem' }}>
               Selected: {file.name} ({(file.size / (1024 * 1024)).toFixed(1)} MB)

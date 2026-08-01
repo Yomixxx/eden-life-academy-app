@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
 
+export const MAX_LESSON_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100MB — must match the lesson-files bucket's configured file size limit in Supabase.
+
 const DOCUMENT_TYPES = new Set([
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -29,6 +31,10 @@ export function documentLabel(file: File) {
 }
 
 export async function uploadLessonFile(file: File, courseId: string) {
+  if (file.size > MAX_LESSON_FILE_SIZE_BYTES) {
+    throw new Error('File is too large. Lesson files must be 100MB or smaller.');
+  }
+
   const supabase = createClient();
   const ext = file.name.split('.').pop();
   const path = `${courseId}/${crypto.randomUUID()}.${ext}`;
