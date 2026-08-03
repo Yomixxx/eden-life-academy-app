@@ -9,6 +9,17 @@ const STEPS = [
   {
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--eden)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 6.1H3M21 12.1H3M15.1 18H3"/>
+      </svg>
+    ),
+    title: 'A Word From Pastor Gbenga Ajibola',
+    desc: 'Beloved, I am glad you are here. Eden Life Academy exists to equip you for Christ and a life of exploits, not just to inform you, but to transform you. You are not a visitor. You are family.',
+    cta: undefined,
+    href: undefined,
+  },
+  {
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--eden)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
       </svg>
     ),
@@ -91,23 +102,39 @@ export default function OnboardingPage() {
             {current.desc}
           </p>
 
-          <a href={current.href} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
-            width: '100%', padding: '1rem', borderRadius: 10, textDecoration: 'none',
-            background: 'var(--eden)', color: 'var(--bg-0)', fontWeight: 700, fontSize: '.95rem',
-            boxShadow: '0 8px 26px rgba(94,201,87,.28)', transition: 'opacity .2s',
-          }}>
-            {current.cta}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </a>
+          {current.href ? (
+            <a href={current.href} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
+              width: '100%', padding: '1rem', borderRadius: 10, textDecoration: 'none',
+              background: 'var(--eden)', color: 'var(--bg-0)', fontWeight: 700, fontSize: '.95rem',
+              boxShadow: '0 8px 26px rgba(94,201,87,.28)', transition: 'opacity .2s',
+            }}>
+              {current.cta}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </a>
+          ) : (
+            <button onClick={() => setStep(s => s + 1)} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
+              width: '100%', border: 'none', cursor: 'pointer', padding: '1rem', borderRadius: 10,
+              background: 'var(--eden)', color: 'var(--bg-0)', fontWeight: 700, fontSize: '.95rem',
+              boxShadow: '0 8px 26px rgba(94,201,87,.28)', transition: 'opacity .2s',
+              fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+            }}>
+              Continue
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
+          )}
 
-          {step < STEPS.length - 1 ? (
+          {step < STEPS.length - 1 && current.href && (
             <button onClick={() => setStep(s => s + 1)} style={{ marginTop: '1rem', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-lo)', fontSize: '.88rem', padding: '.5rem', fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
               Show me what else is here →
             </button>
-          ) : (
+          )}
+          {step === STEPS.length - 1 && (
             <a href="/dashboard" style={{ display: 'block', marginTop: '1rem', color: 'var(--text-lo)', fontSize: '.88rem', textDecoration: 'none' }}>
               Go to my dashboard →
             </a>

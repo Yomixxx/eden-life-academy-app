@@ -79,9 +79,10 @@ export default function AdminAnnouncements() {
   async function save() {
     if (!form.title.trim()) return
     setSaving(true)
+    const isFirstPublish = form.is_published && !editing?.published_at
     const payload = {
       ...form,
-      published_at: form.is_published && !editing?.published_at ? new Date().toISOString() : form.published_at,
+      published_at: isFirstPublish ? new Date().toISOString() : form.published_at,
       expires_at: form.expires_at || null,
       created_by: userId,
     }
@@ -93,6 +94,15 @@ export default function AdminAnnouncements() {
     setSaving(false)
     setShowModal(false)
     load()
+    if (isFirstPublish) notifyMembers(form.title, form.body ?? '')
+  }
+
+  function notifyMembers(title: string, body: string) {
+    fetch('/api/admin/announcements/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, body }),
+    }).catch(() => {})
   }
 
   async function togglePin(item: Announcement) {
@@ -101,10 +111,12 @@ export default function AdminAnnouncements() {
   }
 
   async function togglePublish(item: Announcement) {
+    const isFirstPublish = !item.is_published && !item.published_at
     const update: Partial<Announcement> = { is_published: !item.is_published }
-    if (!item.is_published && !item.published_at) update.published_at = new Date().toISOString()
+    if (isFirstPublish) update.published_at = new Date().toISOString()
     await supabase.from('announcements').update(update).eq('id', item.id)
     setItems(prev => prev.map(a => a.id === item.id ? { ...a, ...update } : a))
+    if (isFirstPublish) notifyMembers(item.title, item.body ?? '')
   }
 
   async function del(id: string) {

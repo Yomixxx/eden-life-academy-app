@@ -1,8 +1,27 @@
-// Welcome email is handled by Supabase's built-in auth confirmation email.
-// Customize the template in: Supabase Dashboard → Authentication → Email Templates → Confirm signup
-// No external service or API key required.
-
 import { NextResponse } from 'next/server'
-export async function POST() {
-  return NextResponse.json({ ok: true })
+import { transporter, FROM } from '@/lib/mailer'
+import { welcomeEmail } from '@/lib/email-templates'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://eden-life-academy-app.vercel.app'
+
+export async function POST(req: Request) {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    return NextResponse.json({ ok: true, skipped: 'Gmail not configured' })
+  }
+
+  const { to, firstName } = await req.json()
+  if (!to) return NextResponse.json({ error: 'Missing "to"' }, { status: 400 })
+
+  try {
+    await transporter.sendMail({
+      from: FROM,
+      to,
+      subject: 'Welcome to Eden Life Academy',
+      html: welcomeEmail(firstName || 'Friend', APP_URL),
+    })
+    return NextResponse.json({ ok: true })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 }
