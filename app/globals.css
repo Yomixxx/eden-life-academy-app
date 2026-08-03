@@ -1,46 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 :root {
   --bg-0: #080f0e;
   --bg-1: #0d1917;
   --bg-2: #111f1d;
   --bg-3: #162421;
-  --bg-4: #1c2e2b;
-
   --eden: #5ec957;
   --eden-hover: #4ec948;
-  --eden-dim: rgba(94, 201, 87, 0.12);
-  --eden-glow: rgba(94, 201, 87, 0.28);
-
-  --border: rgba(255, 255, 255, 0.07);
-  --border-hi: rgba(255, 255, 255, 0.13);
-
-  --text-hi: #ffffff;
+  --text-hi: #fff;
   --text-md: rgba(255, 255, 255, 0.78);
   --text-lo: rgba(255, 255, 255, 0.45);
-  --text-dim: rgba(255, 255, 255, 0.28);
-
-  --danger: #e2574c;
-  --warn: #e0a941;
-
-  --font-display: var(--font-montserrat), Montserrat, system-ui, sans-serif;
-  --font-body: var(--font-poppins), Poppins, system-ui, sans-serif;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-hi: rgba(255, 255, 255, 0.16);
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  padding: 0;
-  margin: 0;
+html {
+  color-scheme: dark;
 }
 
 body {
-  font-family: var(--font-body);
-  font-weight: 300;
+  background: var(--bg-0);
   color: var(--text-md);
-  background: var(--bg-1);
+  font-family: var(--font-poppins), 'Poppins', sans-serif;
   min-height: 100svh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -48,145 +42,30 @@ a {
   text-decoration: none;
 }
 
-button {
-  font-family: inherit;
-}
-
-::selection {
-  background: rgba(94, 201, 87, 0.22);
-  color: var(--text-hi);
-}
-
-:focus-visible {
-  outline: 2px solid var(--eden);
-  outline-offset: 2px;
-}
-
+/* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-1);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--eden);
-  border-radius: 4px;
+  background: var(--border-hi);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
-.field-label {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-lo);
-  margin-bottom: 0.5rem;
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--eden);
+  outline-offset: 2px;
 }
 
-.field-input,
-.field-select,
-.field-textarea {
-  width: 100%;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
-  color: var(--text-hi);
-  font-size: 0.95rem;
-  font-family: var(--font-body);
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.field-input:focus,
-.field-select:focus,
-.field-textarea:focus {
-  border-color: var(--eden);
-  outline: none;
-}
-
-.field-textarea {
-  resize: vertical;
-  min-height: 6rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.85rem 1.4rem;
-  border-radius: 10px;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.2s, border-color 0.2s;
-}
-
-.btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: var(--eden);
-  color: var(--bg-0);
-  box-shadow: 0 8px 26px var(--eden-glow);
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--eden-hover);
-}
-
-.btn-ghost {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  color: var(--text-hi);
-}
-.btn-ghost:hover:not(:disabled) {
-  border-color: var(--border-hi);
-}
-
-.btn-danger {
-  background: transparent;
-  border: 1px solid rgba(226, 87, 76, 0.35);
-  color: var(--danger);
-}
-.btn-danger:hover:not(:disabled) {
-  background: rgba(226, 87, 76, 0.1);
-}
-
-.card {
-  background: var(--bg-3);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-}
-
-.notice {
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
-  font-size: 0.85rem;
-  border: 1px solid transparent;
-}
-.notice-error {
-  background: rgba(226, 87, 76, 0.1);
-  border-color: rgba(226, 87, 76, 0.3);
-  color: #ff9c94;
-}
-.notice-success {
-  background: var(--eden-dim);
-  border-color: var(--eden-glow);
-  color: var(--eden);
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  background: var(--eden-dim);
-  color: var(--eden);
+input,
+textarea,
+select {
+  font-family: var(--font-poppins), 'Poppins', sans-serif;
 }
