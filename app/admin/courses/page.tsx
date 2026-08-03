@@ -240,7 +240,7 @@ export default function AdminCourses() {
                     <polyline points="9 18 15 12 9 6"/>
                   </svg>
                 </button>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: '1 1 180px', minWidth: 180 }}>
                   <div style={{ fontSize: '.95rem', fontWeight: 600, color: 'var(--text-hi)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{course.title}</div>
                   <div style={{ display: 'flex', gap: '.5rem', marginTop: '.25rem', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '.7rem', padding: '.15rem .55rem', background: 'var(--bg-3)', borderRadius: 99, color: 'var(--text-lo)', textTransform: 'capitalize' }}>{course.category?.replace('_', ' ')}</span>
@@ -299,9 +299,9 @@ export default function AdminCourses() {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
                       {lessons[course.id].map((lesson, idx) => (
-                        <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 10, padding: '.65rem 1rem' }}>
+                        <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 10, padding: '.65rem 1rem', flexWrap: 'wrap' }}>
                           <span style={{ fontSize: '.75rem', color: 'var(--text-lo)', width: 24, textAlign: 'center', flexShrink: 0 }}>{idx + 1}</span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ flex: '1 1 160px', minWidth: 160 }}>
                             <div style={{ fontSize: '.88rem', fontWeight: 500, color: 'var(--text-hi)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lesson.title}</div>
                             <div style={{ fontSize: '.72rem', color: 'var(--text-lo)', marginTop: 2 }}>
                               {lesson.duration_minutes ? `${lesson.duration_minutes} min` : ''}

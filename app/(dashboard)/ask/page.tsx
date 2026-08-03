@@ -72,7 +72,7 @@ export default function AskPage() {
     <div className="ask-container" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100svh - 4rem)', maxWidth: 760, margin: '0 auto' }}>
       <style>{`
         @media (max-width: 900px) {
-          .ask-container { height: calc(100svh - 56px - 72px - env(safe-area-inset-bottom, 0px)) !important; }
+          .ask-container { height: calc(100svh - 56px - 1.25rem - 72px - env(safe-area-inset-bottom, 0px)) !important; }
         }
       `}</style>
       {/* Header */}
