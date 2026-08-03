@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import PushSubscribe from '@/components/PushSubscribe'
 
 export default async function DevotionPage() {
   const supabase = await createClient()
@@ -32,7 +31,6 @@ export default async function DevotionPage() {
           <p style={{ color: 'var(--text-lo)', fontSize: '.9rem', margin: 0 }}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
-          <PushSubscribe />
         </div>
       </div>
 

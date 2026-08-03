@@ -47,15 +47,6 @@ export default function SetupCampusPage() {
       await supabase.from('enrollments').upsert({ user_id: user.id, course_id: growthSteps.id }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
     }
 
-    // Send welcome email via AI email agent (non-blocking)
-    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
-    const firstName = (profile?.full_name ?? user.user_metadata?.full_name ?? '').split(' ')[0] || 'Friend'
-    fetch('/api/email-agent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'welcome', to: user.email, firstName, campus: selected }),
-    }).catch(() => {})
-
     router.replace('/onboarding')
   }
 
