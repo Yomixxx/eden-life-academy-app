@@ -1,19 +1,27 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import { transporter, FROM } from '@/lib/mailer'
 import { announcementEmail } from '@/lib/email-templates'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://eden-life-academy-app.vercel.app'
 
 export async function POST(req: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
     return NextResponse.json({ ok: true, skipped: 'Gmail not configured' })
   }
 
   const { title, body } = await req.json()
-  if (!title) return NextResponse.json({ error: 'Missing "title"' }, { status: 400 })
+  if (!title || typeof title !== 'string') return NextResponse.json({ error: 'Missing "title"' }, { status: 400 })
 
-  const admin = createClient(
+  const admin = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
@@ -34,15 +42,15 @@ export async function POST(req: Request) {
   }
 
   let sent = 0
-  for (const user of users) {
-    if (!user.email) continue
-    const firstName = profileMap[user.id] ?? 'Beloved'
+  for (const target of users) {
+    if (!target.email) continue
+    const firstName = profileMap[target.id] ?? 'Beloved'
     try {
       await transporter.sendMail({
         from: FROM,
-        to: user.email,
+        to: target.email,
         subject: `New Announcement — ${title}`,
-        html: announcementEmail(firstName, title, body ?? '', APP_URL),
+        html: announcementEmail(firstName, title, typeof body === 'string' ? body : '', APP_URL),
       })
       sent++
     } catch {

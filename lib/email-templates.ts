@@ -35,11 +35,20 @@ function signature(): string {
 <p style="margin:0;font-size:13px;color:#64748b;">Eden Life Experience Centre, Lagos</p>`
 }
 
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function paragraphs(body: string): string {
   return body
     .split('\n')
     .filter(Boolean)
-    .map(p => `<p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#e2e8f0;">${p}</p>`)
+    .map(p => `<p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#e2e8f0;">${escapeHtml(p)}</p>`)
     .join('')
 }
 
@@ -67,8 +76,8 @@ We love you. You are not a visitor here. You are family.`
 export function announcementEmail(firstName: string, title: string, body: string, appUrl: string): string {
   return wrapInLayout(`
     <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#5ec957;">New Announcement</p>
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#e2e8f0;">Dear ${firstName},</p>
-    <h2 style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#f1f5f2;">${title}</h2>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#e2e8f0;">Dear ${escapeHtml(firstName)},</p>
+    <h2 style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#f1f5f2;">${escapeHtml(title)}</h2>
     ${paragraphs(body)}
     ${ctaButton(`${appUrl}/announcements`, 'View in the app')}
     ${signature()}
