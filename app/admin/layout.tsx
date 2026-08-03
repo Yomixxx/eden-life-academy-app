@@ -56,6 +56,15 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    label: 'Pastoral Care',
+    href: '/admin/pastoral-care',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+    ),
+  },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -63,6 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [ready, setReady] = useState(false)
+  const [openAlerts, setOpenAlerts] = useState(0)
   const supabase = createClient()
 
   useEffect(() => {
@@ -74,6 +84,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       })
     })
   }, [])
+
+  useEffect(() => {
+    if (!ready) return
+    supabase.from('pastoral_alerts').select('id', { count: 'exact', head: true }).eq('reviewed', false)
+      .then(({ count }) => setOpenAlerts(count ?? 0))
+  }, [ready])
 
   useEffect(() => { setSidebarOpen(false) }, [pathname])
 
@@ -177,6 +193,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <span style={{ opacity: active ? 1 : 0.6 }}>{item.icon}</span>
                 {item.label}
+                {item.href === '/admin/pastoral-care' && openAlerts > 0 && (
+                  <span style={{
+                    marginLeft: 'auto', background: '#ef4444', color: '#fff',
+                    fontSize: '.68rem', fontWeight: 700, borderRadius: 99,
+                    padding: '.1rem .45rem', lineHeight: 1.4,
+                  }}>{openAlerts}</span>
+                )}
               </a>
             )
           })}

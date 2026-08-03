@@ -1,5 +1,36 @@
 import { findAnswer, FALLBACK_ANSWER } from '@/lib/qa-answers'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { detectCrisis, crisisResponse } from '@/lib/crisis-detection'
+import { transporter, FROM } from '@/lib/mailer'
+import { pastoralAlertEmail } from '@/lib/email-templates'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://eden-life-academy-app.vercel.app'
+
+async function flagPastoralAlert(userId: string | null, category: string, message: string) {
+  try {
+    const admin = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    await admin.from('pastoral_alerts').insert({ user_id: userId, source: 'ask_pg', category, message })
+  } catch {
+    // Logging the alert must never block the user from getting the crisis response.
+  }
+
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return
+  const alertTo = process.env.PASTORAL_ALERT_EMAIL || process.env.GMAIL_USER
+  try {
+    await transporter.sendMail({
+      from: FROM,
+      to: alertTo,
+      subject: `Pastoral Care Alert — ${category}`,
+      html: pastoralAlertEmail(category, message, APP_URL),
+    })
+  } catch {
+    // Best-effort — the in-app alert record is the source of truth.
+  }
+}
 
 const BASE_SYSTEM_PROMPT = `You are Ask PG — an AI that speaks in the voice, style, and spirit of Senior Pastor Gbenga Ajibola of Eden Life Experience Centre, Lagos, Nigeria.
 
@@ -74,7 +105,7 @@ function stripMarkdown(text: string): string {
     .trim()
 }
 
-function streamText(text: string): Response {
+function streamText(text: string, escalation = false): Response {
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {
@@ -85,7 +116,9 @@ function streamText(text: string): Response {
       controller.close()
     },
   })
-  return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  const headers: Record<string, string> = { 'Content-Type': 'text/plain; charset=utf-8' }
+  if (escalation) headers['X-Ask-PG-Escalation'] = '1'
+  return new Response(stream, { headers })
 }
 
 async function buildSystemPrompt(): Promise<string> {
@@ -124,6 +157,14 @@ If asked about a sermon not in this library, say: "I do not have the notes for t
 export async function POST(req: Request) {
   const body = await req.json()
   const userMessage: string = body.message ?? body.messages?.at(-1)?.content ?? ''
+
+  const crisis = detectCrisis(userMessage)
+  if (crisis) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    await flagPastoralAlert(user?.id ?? null, crisis, userMessage)
+    return streamText(crisisResponse(), true)
+  }
 
   const systemPrompt = await buildSystemPrompt()
 

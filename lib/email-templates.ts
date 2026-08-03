@@ -72,6 +72,21 @@ We love you. You are not a visitor here. You are family.`
   `)
 }
 
+// ── Pastoral alert (internal, sent to staff when Ask PG flags a crisis message) ──
+export function pastoralAlertEmail(category: string, message: string, appUrl: string): string {
+  return wrapInLayout(`
+    <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#f87171;">Pastoral Care Alert — Ask PG</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#e2e8f0;">A member's message to Ask PG was flagged as <strong>${escapeHtml(category)}</strong> and needs pastoral follow-up.</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;background:#0a0f0d;border:1px solid #1e2d22;border-radius:8px;">
+      <tr><td style="padding:14px 18px;">
+        <p style="margin:0;font-size:14px;line-height:1.7;color:#94a3b8;font-style:italic;white-space:pre-wrap;">"${escapeHtml(message)}"</p>
+      </td></tr>
+    </table>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#94a3b8;">Please reach out to this member directly and mark the alert reviewed once handled.</p>
+    ${ctaButton(`${appUrl}/admin/pastoral-care`, 'Review in Admin')}
+  `)
+}
+
 // ── Announcement broadcast (sent when an announcement goes live) ────────────
 export function announcementEmail(firstName: string, title: string, body: string, appUrl: string): string {
   return wrapInLayout(`
