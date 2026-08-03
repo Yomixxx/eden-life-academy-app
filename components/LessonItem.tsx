@@ -28,6 +28,9 @@ export default function LessonItem({ lesson, completed, locked, index }: LessonI
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [isDone, setIsDone] = useState(completed)
+  const [showReader, setShowReader] = useState(false)
+
+  const isPdf = !!lesson.pdf_url && /\.pdf($|\?)/i.test(lesson.pdf_url)
 
   async function toggleComplete() {
     if (locked || saving) return
@@ -116,7 +119,41 @@ export default function LessonItem({ lesson, completed, locked, index }: LessonI
           {lesson.content && (
             <p style={{ marginTop: '.75rem', color: 'var(--text-md)', fontSize: '.88rem', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lesson.content}</p>
           )}
-          {lesson.pdf_url && (
+
+          {lesson.pdf_url && isPdf && (
+            <div style={{ marginTop: '.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setShowReader(v => !v)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '.4rem',
+                    background: 'rgba(94,201,87,.1)', border: '1px solid rgba(94,201,87,.25)',
+                    color: 'var(--eden)', fontWeight: 600, fontSize: '.85rem', cursor: 'pointer',
+                    padding: '.5rem .9rem', borderRadius: 8, fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  {showReader ? 'Hide reader' : (lesson.attachment_label || 'Read in app')}
+                </button>
+                <a href={lesson.pdf_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '.82rem', color: 'var(--text-lo)', fontWeight: 500 }}>
+                  Open in new tab / Download
+                </a>
+              </div>
+              {showReader && (
+                <div style={{ marginTop: '.85rem', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-0)' }}>
+                  <iframe
+                    src={lesson.pdf_url}
+                    title={lesson.title}
+                    style={{ width: '100%', height: '75vh', border: 'none', display: 'block' }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {lesson.pdf_url && !isPdf && (
             <a href={lesson.pdf_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', marginTop: '.75rem', color: 'var(--eden)', fontWeight: 600, fontSize: '.85rem' }}>
               {lesson.attachment_label || 'Download attachment'}
             </a>
