@@ -5,7 +5,7 @@ import { detectCrisis, crisisResponse } from '@/lib/crisis-detection'
 import { transporter, FROM } from '@/lib/mailer'
 import { pastoralAlertEmail } from '@/lib/email-templates'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://eden-life-academy-app.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
 
 async function flagPastoralAlert(userId: string | null, category: string, message: string) {
   try {

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 
-const SIGNUP_URL = 'https://eden-life-academy-app.vercel.app/signup'
 const YOUTUBE_LIVE = 'https://www.youtube.com/@edenlifeglobal/live'
 
 function useLagosTime() {
@@ -109,7 +108,7 @@ export function InviteCard() {
   const [copied, setCopied] = useState(false)
 
   function copy() {
-    navigator.clipboard.writeText(SIGNUP_URL).then(() => {
+    navigator.clipboard.writeText(`${window.location.origin}/signup`).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })

@@ -16,7 +16,7 @@ export function wrapInLayout(body: string): string {
 <tr><td style="padding:20px 40px;background:#0a0f0d;border-top:1px solid #1e2d22;">
   <p style="margin:0;font-size:11px;color:#334155;line-height:1.6;">
     Eden Life Experience Centre · Mainland: Ogudu · Island: Ajah · Online, Lagos<br>
-    <a href="https://eden-life-academy-app.vercel.app" style="color:#5ec957;text-decoration:none;">eden-life-academy-app.vercel.app</a>
+    <a href="https://app.edenlifeng.org" style="color:#5ec957;text-decoration:none;">app.edenlifeng.org</a>
   </p>
 </td></tr>
 </table></td></tr></table></body></html>`

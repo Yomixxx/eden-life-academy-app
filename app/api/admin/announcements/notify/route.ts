@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { transporter, FROM } from '@/lib/mailer'
 import { announcementEmail } from '@/lib/email-templates'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://eden-life-academy-app.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
