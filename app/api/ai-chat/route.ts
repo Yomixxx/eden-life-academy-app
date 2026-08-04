@@ -155,14 +155,16 @@ If asked about a sermon not in this library, say: "I do not have the notes for t
 }
 
 export async function POST(req: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return new Response('Unauthorized', { status: 401 })
+
   const body = await req.json()
   const userMessage: string = body.message ?? body.messages?.at(-1)?.content ?? ''
 
   const crisis = detectCrisis(userMessage)
   if (crisis) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    await flagPastoralAlert(user?.id ?? null, crisis, userMessage)
+    await flagPastoralAlert(user.id, crisis, userMessage)
     return streamText(crisisResponse(), true)
   }
 
