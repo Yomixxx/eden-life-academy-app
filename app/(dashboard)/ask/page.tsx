@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react'
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  escalation?: boolean
 }
 
 const SUGGESTED = [
@@ -44,6 +45,7 @@ export default function AskPage() {
         body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })) }),
       })
       if (!res.ok || !res.body) throw new Error('Request failed')
+      const escalation = res.headers.get('X-Ask-PG-Escalation') === '1'
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let full = ''
@@ -51,7 +53,7 @@ export default function AskPage() {
         const { done, value } = await reader.read()
         if (done) break
         full += decoder.decode(value, { stream: true })
-        setMessages(prev => prev.map((m, i) => i === assistantIdx ? { ...m, content: full } : m))
+        setMessages(prev => prev.map((m, i) => i === assistantIdx ? { ...m, content: full, escalation } : m))
       }
     } catch {
       setMessages(prev => prev.map((m, i) => i === assistantIdx ? { ...m, content: 'Sorry, I couldn\'t reach the AI. Please try again.' } : m))
@@ -70,7 +72,7 @@ export default function AskPage() {
     <div className="ask-container" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100svh - 4rem)', maxWidth: 760, margin: '0 auto' }}>
       <style>{`
         @media (max-width: 900px) {
-          .ask-container { height: calc(100svh - 56px - 72px - env(safe-area-inset-bottom, 0px)) !important; }
+          .ask-container { height: calc(100svh - 56px - 1.25rem - 72px - env(safe-area-inset-bottom, 0px)) !important; }
         }
       `}</style>
       {/* Header */}
@@ -138,9 +140,14 @@ export default function AskPage() {
                 </div>
                 <div style={{
                   maxWidth: '82%', padding: '.85rem 1.1rem', borderRadius: 14,
-                  background: m.role === 'user' ? 'rgba(94,201,87,.1)' : 'var(--bg-1)',
-                  border: m.role === 'user' ? '1px solid rgba(94,201,87,.2)' : '1px solid var(--border)',
+                  background: m.escalation ? 'rgba(239,68,68,.08)' : m.role === 'user' ? 'rgba(94,201,87,.1)' : 'var(--bg-1)',
+                  border: m.escalation ? '1px solid rgba(239,68,68,.35)' : m.role === 'user' ? '1px solid rgba(94,201,87,.2)' : '1px solid var(--border)',
                 }}>
+                  {m.role === 'assistant' && (
+                    <p style={{ margin: '0 0 .4rem', fontSize: '.68rem', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: m.escalation ? '#f87171' : 'var(--text-lo)' }}>
+                      Ask PG · AI Assistant, not Pastor Gbenga
+                    </p>
+                  )}
                   {m.content ? (
                     <p style={{ margin: 0, color: 'var(--text-hi)', fontSize: '.9rem', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{m.content}</p>
                   ) : (
@@ -148,6 +155,19 @@ export default function AskPage() {
                       {[0, 1, 2].map(i => (
                         <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--eden)', opacity: 0.5, animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite` }} />
                       ))}
+                    </div>
+                  )}
+                  {m.escalation && m.content && (
+                    <div style={{ marginTop: '.9rem', paddingTop: '.9rem', borderTop: '1px solid rgba(239,68,68,.25)', display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+                      <a href="tel:112" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem', background: '#ef4444', color: '#fff', borderRadius: 8, padding: '.7rem 1rem', fontSize: '.85rem', fontWeight: 700, textDecoration: 'none' }}>
+                        Call 112 — Emergency
+                      </a>
+                      <a href="tel:08000787746" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem', background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.3)', borderRadius: 8, padding: '.7rem 1rem', fontSize: '.85rem', fontWeight: 700, textDecoration: 'none' }}>
+                        Call SURPIN Helpline (free) — 0800 078 7746
+                      </a>
+                      <p style={{ margin: '.2rem 0 0', fontSize: '.75rem', color: 'var(--text-lo)', textAlign: 'center' }}>
+                        Our pastoral team has been notified and will follow up with you directly.
+                      </p>
                     </div>
                   )}
                 </div>
