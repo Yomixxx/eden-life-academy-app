@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { transporter, FROM } from '@/lib/mailer'
+import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { continueCourseEmail } from '@/lib/email-templates'
 
 // Runs daily. Emails members who started a course but have gone quiet for a
@@ -25,8 +25,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    return NextResponse.json({ ok: true, skipped: 'Gmail not configured' })
+  if (!isMailerConfigured()) {
+    return NextResponse.json({ ok: true, skipped: 'Mailer not configured' })
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -82,8 +82,7 @@ export async function GET(req: Request) {
     const firstName = profile?.full_name?.split(' ')[0] ?? 'Friend'
 
     try {
-      await transporter.sendMail({
-        from: FROM,
+      await sendEmail({
         to: email,
         subject: `Finish ${course.title} — you're almost there`,
         html: continueCourseEmail(firstName, course.title, completed, total, `${APP_URL}/catalog/${course.id}`),
