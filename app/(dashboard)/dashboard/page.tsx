@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { LiveBanner, InviteCard } from './DashboardExtras'
+import ContinueCoursePopup from '@/components/ContinueCoursePopup'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -8,22 +9,56 @@ export default async function DashboardPage() {
   if (!user) redirect('/login')
 
   const today = new Date().toISOString().slice(0, 10)
-  const [profileRes, enrollRes, announcementRes, devotionRes] = await Promise.all([
+  const [profileRes, enrollmentsRes, announcementRes, devotionRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('enrollments').select('id', { count: 'exact' }).eq('user_id', user.id),
+    supabase.from('enrollments').select('course_id, last_activity_date, courses(id, title)').eq('user_id', user.id).order('last_activity_date', { ascending: false, nullsFirst: false }),
     supabase.from('announcements').select('*').eq('is_pinned', true).order('published_at', { ascending: false }).limit(1).single(),
     supabase.from('daily_devotions').select('scripture_reference, scripture_text, body').eq('date', today).maybeSingle(),
   ])
 
   const profile = profileRes.data
-  const enrolledCount = enrollRes.count ?? 0
+  const enrollments = enrollmentsRes.data ?? []
+  const enrolledCount = enrollments.length
   const pinned = announcementRes.data
   const todayDevotion = devotionRes.data
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Friend'
 
+  // Find the most recently active course that's been started but not finished,
+  // so we can nudge the user to pick it back up.
+  let continueCourse: { id: string; title: string; completed: number; total: number } | null = null
+  const courseIds = enrollments.map(e => e.course_id)
+  if (courseIds.length > 0) {
+    const [lessonsRes, progressRes] = await Promise.all([
+      supabase.from('lessons').select('course_id').eq('is_published', true).in('course_id', courseIds),
+      supabase.from('lesson_progress').select('course_id').eq('user_id', user.id).eq('completed', true).in('course_id', courseIds),
+    ])
+    const totalByCourse: Record<string, number> = {}
+    for (const l of lessonsRes.data ?? []) totalByCourse[l.course_id] = (totalByCourse[l.course_id] ?? 0) + 1
+    const completedByCourse: Record<string, number> = {}
+    for (const p of progressRes.data ?? []) completedByCourse[p.course_id] = (completedByCourse[p.course_id] ?? 0) + 1
+
+    for (const e of enrollments) {
+      const course = Array.isArray(e.courses) ? e.courses[0] : e.courses
+      if (!course) continue
+      const total = totalByCourse[e.course_id] ?? 0
+      const completed = completedByCourse[e.course_id] ?? 0
+      if (total > 0 && completed > 0 && completed < total) {
+        continueCourse = { id: course.id, title: course.title, completed, total }
+        break
+      }
+    }
+  }
+
   return (
     <div style={{ maxWidth: 1100 }}>
+      {continueCourse && (
+        <ContinueCoursePopup
+          course={{ id: continueCourse.id, title: continueCourse.title }}
+          completed={continueCourse.completed}
+          total={continueCourse.total}
+        />
+      )}
       <LiveBanner />
       {/* Welcome */}
       <div style={{ marginBottom: '2rem' }}>
