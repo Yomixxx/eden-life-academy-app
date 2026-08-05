@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { authErrorMessage } from '@/lib/auth-error'
 import Image from 'next/image'
 
 export default function SignupPage() {
@@ -29,7 +30,7 @@ export default function SignupPage() {
       },
     })
     if (error) {
-      setError(error.message)
+      setError(authErrorMessage(error, 'We could not create your account right now. Please try again in a moment.'))
       setLoading(false)
       return
     }
