@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { transporter, FROM } from '@/lib/mailer'
+import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { welcomeEmail } from '@/lib/email-templates'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
 
 export async function POST() {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    return NextResponse.json({ ok: true, skipped: 'Gmail not configured' })
+  if (!isMailerConfigured()) {
+    return NextResponse.json({ ok: true, skipped: 'Mailer not configured' })
   }
 
   const supabase = await createClient()
@@ -20,8 +20,7 @@ export async function POST() {
   const firstName = (profile?.full_name ?? user.user_metadata?.full_name ?? '').split(' ')[0] || 'Friend'
 
   try {
-    await transporter.sendMail({
-      from: FROM,
+    await sendEmail({
       to: user.email,
       subject: 'Welcome to Eden Life Academy',
       html: welcomeEmail(firstName, APP_URL),

@@ -2,7 +2,7 @@ import { findAnswer, FALLBACK_ANSWER } from '@/lib/qa-answers'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { detectCrisis, crisisResponse } from '@/lib/crisis-detection'
-import { transporter, FROM } from '@/lib/mailer'
+import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { pastoralAlertEmail } from '@/lib/email-templates'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
@@ -18,12 +18,10 @@ async function flagPastoralAlert(userId: string | null, category: string, messag
     // Logging the alert must never block the user from getting the crisis response.
   }
 
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return
-  const alertTo = process.env.PASTORAL_ALERT_EMAIL || process.env.GMAIL_USER
+  if (!isMailerConfigured() || !process.env.PASTORAL_ALERT_EMAIL) return
   try {
-    await transporter.sendMail({
-      from: FROM,
-      to: alertTo,
+    await sendEmail({
+      to: process.env.PASTORAL_ALERT_EMAIL,
       subject: `Pastoral Care Alert — ${category}`,
       html: pastoralAlertEmail(category, message, APP_URL),
     })

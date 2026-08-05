@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
-import { transporter, FROM } from '@/lib/mailer'
+import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { announcementEmail } from '@/lib/email-templates'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
@@ -14,8 +14,8 @@ export async function POST(req: Request) {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    return NextResponse.json({ ok: true, skipped: 'Gmail not configured' })
+  if (!isMailerConfigured()) {
+    return NextResponse.json({ ok: true, skipped: 'Mailer not configured' })
   }
 
   const { title, body } = await req.json()
@@ -46,8 +46,7 @@ export async function POST(req: Request) {
     if (!target.email) continue
     const firstName = profileMap[target.id] ?? 'Beloved'
     try {
-      await transporter.sendMail({
-        from: FROM,
+      await sendEmail({
         to: target.email,
         subject: `New Announcement — ${title}`,
         html: announcementEmail(firstName, title, typeof body === 'string' ? body : '', APP_URL),
