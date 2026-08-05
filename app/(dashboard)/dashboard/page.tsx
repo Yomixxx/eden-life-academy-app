@@ -17,6 +17,7 @@ export default async function DashboardPage() {
   ])
 
   const profile = profileRes.data
+  if (!profile?.campus) redirect('/setup-campus')
   const enrollments = enrollmentsRes.data ?? []
   const enrolledCount = enrollments.length
   const pinned = announcementRes.data
