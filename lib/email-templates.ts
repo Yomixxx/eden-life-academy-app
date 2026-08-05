@@ -72,6 +72,26 @@ We love you. You are not a visitor here. You are family.`
   `)
 }
 
+// ── Continue course reminder (sent when a member starts a course, then goes quiet) ──
+export function continueCourseEmail(firstName: string, courseTitle: string, completed: number, total: number, courseUrl: string): string {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+  const remaining = total - completed
+  const body = `Beloved ${firstName},
+
+I noticed you started ${courseTitle} but have not been back in a few days. You are already ${pct}% of the way through, just ${remaining} lesson${remaining === 1 ? '' : 's'} away from finishing.
+
+Growth does not happen by accident. It happens when we show up, even for twenty minutes at a time.
+
+I am cheering you on. Come finish what you started.`
+
+  return wrapInLayout(`
+    <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#5ec957;">Pick Up Where You Left Off</p>
+    ${paragraphs(body)}
+    ${ctaButton(courseUrl, 'Continue Your Course')}
+    ${signature()}
+  `)
+}
+
 // ── Pastoral alert (internal, sent to staff when Ask PG flags a crisis message) ──
 export function pastoralAlertEmail(category: string, message: string, appUrl: string): string {
   return wrapInLayout(`

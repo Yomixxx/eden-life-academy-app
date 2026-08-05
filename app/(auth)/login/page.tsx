@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { authErrorMessage } from '@/lib/auth-error'
 import Image from 'next/image'
 
 export default function LoginPage() {
@@ -26,7 +27,7 @@ export default function LoginPage() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError(error.message)
+      setError(authErrorMessage(error, 'We could not sign you in right now. Please try again in a moment.'))
       setLoading(false)
     } else {
       router.push('/dashboard')
@@ -42,7 +43,7 @@ export default function LoginPage() {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     })
-    if (error) setError(error.message)
+    if (error) setError(authErrorMessage(error, 'We could not sign you in with Google right now. Please try again in a moment.'))
   }
 
   return (

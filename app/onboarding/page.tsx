@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import { BrandIconBadge, BrandEyebrow, BrandButton } from '@/components/BrandUI'
 
 const STEPS = [
   {
@@ -87,13 +88,9 @@ export default function OnboardingPage() {
 
         {/* Card */}
         <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border-hi)', borderRadius: 20, padding: '2.5rem', textAlign: 'center' }}>
-          {step === 0 && (
-            <p style={{ fontSize: '.72rem', fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--eden)', marginBottom: '1rem' }}>Welcome, {name}!</p>
-          )}
+          {step === 0 && <BrandEyebrow>Welcome, {name}!</BrandEyebrow>}
 
-          <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(94,201,87,.1)', border: '1px solid rgba(94,201,87,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-            {current.icon}
-          </div>
+          <BrandIconBadge>{current.icon}</BrandIconBadge>
 
           <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: '1.55rem', color: 'var(--text-hi)', letterSpacing: '-.02em', marginBottom: '.75rem', lineHeight: 1.2 }}>
             {current.title}
@@ -103,30 +100,9 @@ export default function OnboardingPage() {
           </p>
 
           {current.href ? (
-            <a href={current.href} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
-              width: '100%', padding: '1rem', borderRadius: 10, textDecoration: 'none',
-              background: 'var(--eden)', color: 'var(--bg-0)', fontWeight: 700, fontSize: '.95rem',
-              boxShadow: '0 8px 26px rgba(94,201,87,.28)', transition: 'opacity .2s',
-            }}>
-              {current.cta}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-              </svg>
-            </a>
+            <BrandButton href={current.href}>{current.cta}</BrandButton>
           ) : (
-            <button onClick={() => setStep(s => s + 1)} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
-              width: '100%', border: 'none', cursor: 'pointer', padding: '1rem', borderRadius: 10,
-              background: 'var(--eden)', color: 'var(--bg-0)', fontWeight: 700, fontSize: '.95rem',
-              boxShadow: '0 8px 26px rgba(94,201,87,.28)', transition: 'opacity .2s',
-              fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-            }}>
-              Continue
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-              </svg>
-            </button>
+            <BrandButton onClick={() => setStep(s => s + 1)}>Continue</BrandButton>
           )}
 
           {step < STEPS.length - 1 && current.href && (

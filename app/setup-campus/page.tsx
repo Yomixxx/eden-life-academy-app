@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { enrollInGrowthSteps } from '@/lib/onboarding'
 import Image from 'next/image'
 
 const CAMPUSES = [
@@ -35,17 +36,7 @@ export default function SetupCampusPage() {
       return
     }
 
-    // Auto-enrol in Growth Steps (first course, sort_order = 1)
-    const { data: growthSteps } = await supabase
-      .from('courses')
-      .select('id')
-      .ilike('title', '%growth steps%')
-      .eq('is_published', true)
-      .limit(1)
-      .single()
-    if (growthSteps) {
-      await supabase.from('enrollments').upsert({ user_id: user.id, course_id: growthSteps.id }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
-    }
+    await enrollInGrowthSteps(supabase, user.id)
 
     // Send the branded welcome email (non-blocking) — recipient and name are
     // derived server-side from the session, not from this request body.

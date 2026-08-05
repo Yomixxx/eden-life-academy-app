@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { authErrorMessage } from '@/lib/auth-error'
+import { enrollInGrowthSteps } from '@/lib/onboarding'
 import Image from 'next/image'
 
 export default function SignupPage() {
@@ -20,7 +22,7 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -29,18 +31,25 @@ export default function SignupPage() {
       },
     })
     if (error) {
-      setError(error.message)
+      setError(authErrorMessage(error, 'We could not create your account right now. Please try again in a moment.'))
       setLoading(false)
-    } else {
-      // Fire welcome email (non-blocking)
-      fetch('/api/welcome', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, fullName, campus }),
-      }).catch(() => {})
-      setSuccess(true)
-      setLoading(false)
+      return
     }
+
+    if (data.session) {
+      // Email confirmation is disabled on the Supabase project, so the
+      // account is already active and signed in immediately — finish
+      // setup the same way /setup-campus would, then send to the tour.
+      await supabase.from('profiles').update({ campus }).eq('id', data.session.user.id)
+      await enrollInGrowthSteps(supabase, data.session.user.id)
+      fetch('/api/welcome', { method: 'POST' }).catch(() => {})
+      router.push('/onboarding')
+      router.refresh()
+      return
+    }
+
+    setSuccess(true)
+    setLoading(false)
   }
 
   const inputStyle = {
