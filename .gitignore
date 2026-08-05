@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local AI agent tooling — not app code, never commit
+/.claude/skills/
+/.agents/
+/videos/
+skills-lock.json
