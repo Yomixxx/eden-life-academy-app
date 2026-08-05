@@ -20,7 +20,7 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -31,16 +31,27 @@ export default function SignupPage() {
     if (error) {
       setError(error.message)
       setLoading(false)
-    } else {
-      // Fire welcome email (non-blocking)
-      fetch('/api/welcome', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, fullName, campus }),
-      }).catch(() => {})
-      setSuccess(true)
-      setLoading(false)
+      return
     }
+
+    // Fire welcome email (non-blocking)
+    fetch('/api/welcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, fullName, campus }),
+    }).catch(() => {})
+
+    if (data.session) {
+      // Email confirmation is disabled on the Supabase project, so the
+      // account is already active and signed in — there is no
+      // confirmation email to wait for.
+      router.push('/dashboard')
+      router.refresh()
+      return
+    }
+
+    setSuccess(true)
+    setLoading(false)
   }
 
   const inputStyle = {
