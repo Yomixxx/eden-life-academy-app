@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { passwordStrengthError } from '@/lib/password-strength'
+import { passwordStrengthError, isPasswordPwned } from '@/lib/password-strength'
 import Image from 'next/image'
 
 export default function UpdatePasswordPage() {
@@ -22,6 +22,13 @@ export default function UpdatePasswordPage() {
     if (strengthError) { setError(strengthError); return }
     setError('')
     setLoading(true)
+
+    if (await isPasswordPwned(password)) {
+      setError('This password has appeared in a known data breach. Please choose a different one.')
+      setLoading(false)
+      return
+    }
+
     const { error } = await supabase.auth.updateUser({ password })
     if (error) { setError(error.message); setLoading(false) }
     else { setDone(true); setTimeout(() => router.push('/dashboard'), 2500) }

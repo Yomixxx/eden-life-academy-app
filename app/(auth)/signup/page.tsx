@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { authErrorMessage } from '@/lib/auth-error'
-import { passwordStrengthError } from '@/lib/password-strength'
+import { passwordStrengthError, isPasswordPwned } from '@/lib/password-strength'
 import { enrollInGrowthSteps } from '@/lib/onboarding'
 import Image from 'next/image'
 
@@ -30,6 +30,13 @@ export default function SignupPage() {
     }
 
     setLoading(true)
+
+    if (await isPasswordPwned(password)) {
+      setError('This password has appeared in a known data breach. Please choose a different one.')
+      setLoading(false)
+      return
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
