@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { passwordStrengthError } from '@/lib/password-strength'
+import { passwordStrengthError, isPasswordPwned } from '@/lib/password-strength'
 import TwoFactorSettings from '@/components/TwoFactorSettings'
 import type { Profile } from '@/lib/types'
 
@@ -65,6 +65,13 @@ export default function SettingsPage() {
     if (strengthError) { setPwMsg(strengthError); return }
     setPwSaving(true)
     setPwMsg('')
+
+    if (await isPasswordPwned(newPw)) {
+      setPwMsg('This password has appeared in a known data breach. Please choose a different one.')
+      setPwSaving(false)
+      return
+    }
+
     const { error } = await supabase.auth.updateUser({ password: newPw })
     setPwSaving(false)
     if (error) {
