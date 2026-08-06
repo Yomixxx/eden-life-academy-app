@@ -8,6 +8,7 @@ const PROTECTED = [
 ]
 
 const AUTH_PAGES = ['/login', '/signup']
+const MFA_CHALLENGE_PAGE = '/mfa-challenge'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -40,6 +41,7 @@ export async function proxy(request: NextRequest) {
   const isProtected = PROTECTED.some(r => pathname === r || pathname.startsWith(r + '/'))
   const isAuth = AUTH_PAGES.some(r => pathname === r || pathname.startsWith(r + '/'))
   const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
+  const isMfaChallenge = pathname === MFA_CHALLENGE_PAGE
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
@@ -47,9 +49,38 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  if (isMfaChallenge && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // A user with a verified TOTP factor holds only an aal1 session right
+  // after password/Google sign-in — aal2 requires completing the code
+  // challenge. Compute this once and reuse it below.
+  let mfaPending = false
+  if (user && (isProtected || isAuth || isMfaChallenge)) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    mfaPending = aal?.nextLevel === 'aal2' && aal?.currentLevel !== 'aal2'
+  }
+
   if (isAuth && user) {
     const url = request.nextUrl.clone()
+    url.pathname = mfaPending ? MFA_CHALLENGE_PAGE : '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  if (isMfaChallenge && user && !mfaPending) {
+    // Nothing to challenge (no factor enrolled, or already completed) —
+    // don't leave the challenge page reachable once it's satisfied.
+    const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  if (isProtected && user && mfaPending) {
+    const url = request.nextUrl.clone()
+    url.pathname = MFA_CHALLENGE_PAGE
     return NextResponse.redirect(url)
   }
 
