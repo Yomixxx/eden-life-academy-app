@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { passwordStrengthError } from '@/lib/password-strength'
 import Image from 'next/image'
 
 export default function UpdatePasswordPage() {
@@ -17,7 +18,8 @@ export default function UpdatePasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (password !== confirm) { setError('Passwords do not match.'); return }
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    const strengthError = passwordStrengthError(password)
+    if (strengthError) { setError(strengthError); return }
     setError('')
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password })
@@ -55,7 +57,7 @@ export default function UpdatePasswordPage() {
           <>
             <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: '1.6rem', color: 'var(--text-hi)', letterSpacing: '-.02em', textAlign: 'center' }}>Choose a new password</h2>
             <p style={{ marginTop: '.5rem', marginBottom: '2rem', fontSize: '.9rem', fontWeight: 300, color: 'var(--text-lo)', textAlign: 'center' }}>
-              Your new password must be at least 8 characters.
+              At least 10 characters, with an uppercase letter, a lowercase letter, and a number.
             </p>
 
             {error && (
@@ -65,7 +67,7 @@ export default function UpdatePasswordPage() {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '.72rem', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-lo)', marginBottom: '.5rem' }}>New Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 8 characters" autoComplete="new-password" required minLength={8} style={inputStyle}
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 10 characters" autoComplete="new-password" required minLength={10} style={inputStyle}
                   onFocus={e => { e.currentTarget.style.borderColor = 'var(--eden)'; e.currentTarget.style.background = 'var(--bg-3)' }}
                   onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-2)' }}
                 />

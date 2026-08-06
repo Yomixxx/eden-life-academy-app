@@ -8,6 +8,7 @@ const PROTECTED = [
 ]
 
 const AUTH_PAGES = ['/login', '/signup']
+const MFA_CHALLENGE_PAGE = '/mfa-challenge'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -39,6 +40,8 @@ export async function proxy(request: NextRequest) {
 
   const isProtected = PROTECTED.some(r => pathname === r || pathname.startsWith(r + '/'))
   const isAuth = AUTH_PAGES.some(r => pathname === r || pathname.startsWith(r + '/'))
+  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
+  const isMfaChallenge = pathname === MFA_CHALLENGE_PAGE
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
@@ -46,10 +49,52 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  if (isMfaChallenge && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // A user with a verified TOTP factor holds only an aal1 session right
+  // after password/Google sign-in — aal2 requires completing the code
+  // challenge. Compute this once and reuse it below.
+  let mfaPending = false
+  if (user && (isProtected || isAuth || isMfaChallenge)) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    mfaPending = aal?.nextLevel === 'aal2' && aal?.currentLevel !== 'aal2'
+  }
+
   if (isAuth && user) {
+    const url = request.nextUrl.clone()
+    url.pathname = mfaPending ? MFA_CHALLENGE_PAGE : '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  if (isMfaChallenge && user && !mfaPending) {
+    // Nothing to challenge (no factor enrolled, or already completed) —
+    // don't leave the challenge page reachable once it's satisfied.
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
+  }
+
+  if (isProtected && user && mfaPending) {
+    const url = request.nextUrl.clone()
+    url.pathname = MFA_CHALLENGE_PAGE
+    return NextResponse.redirect(url)
+  }
+
+  // Admin pages were previously gated only by a client-side role check
+  // (bypassable — it's just JS in the browser). RLS already protects the
+  // underlying data via is_admin(), but the route itself needs its own
+  // server-side gate too, checked the same way RLS does.
+  if (isAdminRoute && user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   return response

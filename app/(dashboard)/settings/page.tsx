@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { passwordStrengthError } from '@/lib/password-strength'
+import TwoFactorSettings from '@/components/TwoFactorSettings'
 import type { Profile } from '@/lib/types'
 
 export default function SettingsPage() {
@@ -59,7 +61,8 @@ export default function SettingsPage() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
     if (newPw !== confirmPw) { setPwMsg('Passwords do not match.'); return }
-    if (newPw.length < 8) { setPwMsg('Password must be at least 8 characters.'); return }
+    const strengthError = passwordStrengthError(newPw)
+    if (strengthError) { setPwMsg(strengthError); return }
     setPwSaving(true)
     setPwMsg('')
     const { error } = await supabase.auth.updateUser({ password: newPw })
@@ -192,7 +195,7 @@ export default function SettingsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="settings-grid">
             <div style={fieldStyle}>
               <label style={labelStyle}>New Password</label>
-              <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Min. 8 characters" style={inputStyle}
+              <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Min. 10 characters" style={inputStyle}
                 onFocus={e => e.currentTarget.style.borderColor = 'var(--eden)'}
                 onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'} />
             </div>
@@ -226,6 +229,9 @@ export default function SettingsPage() {
           </button>
         </form>
       </div>
+
+      {/* Two-Factor Authentication */}
+      <TwoFactorSettings />
 
       {/* Notifications - static */}
       <div style={sectionStyle}>
