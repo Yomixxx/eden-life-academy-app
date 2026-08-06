@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { authErrorMessage } from '@/lib/auth-error'
+import { passwordStrengthError } from '@/lib/password-strength'
 import { enrollInGrowthSteps } from '@/lib/onboarding'
 import Image from 'next/image'
 
@@ -21,6 +22,13 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    const strengthError = passwordStrengthError(password)
+    if (strengthError) {
+      setError(strengthError)
+      return
+    }
+
     setLoading(true)
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -149,9 +157,10 @@ export default function SignupPage() {
               </div>
               <div style={{ marginBottom: '1.15rem' }}>
                 <label style={labelStyle}>Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 8 characters" autoComplete="new-password" required minLength={8} style={inputStyle}
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 10 characters" autoComplete="new-password" required minLength={10} style={inputStyle}
                   onFocus={e => { e.currentTarget.style.borderColor = 'var(--eden)'; e.currentTarget.style.background = 'var(--bg-3)' }}
                   onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-2)' }} />
+                <p style={{ marginTop: '.4rem', fontSize: '.76rem', color: 'var(--text-lo)' }}>At least 10 characters, with an uppercase letter, a lowercase letter, and a number.</p>
               </div>
               <div style={{ marginBottom: '1.75rem' }}>
                 <label style={labelStyle}>Campus</label>

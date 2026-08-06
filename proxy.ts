@@ -39,6 +39,7 @@ export async function proxy(request: NextRequest) {
 
   const isProtected = PROTECTED.some(r => pathname === r || pathname.startsWith(r + '/'))
   const isAuth = AUTH_PAGES.some(r => pathname === r || pathname.startsWith(r + '/'))
+  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
@@ -50,6 +51,19 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
+  }
+
+  // Admin pages were previously gated only by a client-side role check
+  // (bypassable — it's just JS in the browser). RLS already protects the
+  // underlying data via is_admin(), but the route itself needs its own
+  // server-side gate too, checked the same way RLS does.
+  if (isAdminRoute && user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   return response
