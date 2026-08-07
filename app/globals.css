@@ -69,3 +69,13 @@ textarea,
 select {
   font-family: var(--font-poppins), 'Poppins', sans-serif;
 }
+
+/* Supabase's TOTP enrollment QR code is returned as a raw SVG string with
+   its own hardcoded width/height attributes, which override the container
+   div's CSS size — without this, the SVG renders at its native size and
+   spills out over the text below it instead of filling its 180x180 box. */
+.totp-qr-code svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
