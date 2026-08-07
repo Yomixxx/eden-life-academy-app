@@ -1,8 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+// pdfjs-dist relies on browser-only APIs (Worker, Canvas, DOMMatrix) that
+// don't exist during server rendering.
+const PdfViewer = dynamic(() => import('@/components/PdfViewer'), { ssr: false })
 
 interface LessonItemProps {
   lesson: {
@@ -123,13 +128,7 @@ export default function LessonItem({ lesson, completed, locked, index }: LessonI
           )}
 
           {lesson.pdf_url && isPdf && (
-            <div style={{ marginTop: '.85rem', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-0)' }}>
-              <iframe
-                src={lesson.pdf_url}
-                title={lesson.title}
-                style={{ width: '100%', height: '75vh', border: 'none', display: 'block' }}
-              />
-            </div>
+            <PdfViewer url={lesson.pdf_url} title={lesson.title} downloadLabel={lesson.attachment_label ?? undefined} />
           )}
 
           {lesson.pdf_url && !isPdf && (
