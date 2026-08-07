@@ -187,7 +187,8 @@ export default function TwoFactorSettings() {
             1. Scan this QR code with your authenticator app
           </p>
           <div
-            style={{ width: 180, height: 180, background: '#fff', borderRadius: 10, padding: 10, marginBottom: '1rem' }}
+            className="totp-qr-code"
+            style={{ width: 180, height: 180, background: '#fff', borderRadius: 10, padding: 10, marginBottom: '1rem', overflow: 'hidden', boxSizing: 'border-box' }}
             dangerouslySetInnerHTML={{ __html: qrCode }}
           />
           <p style={{ fontSize: '.78rem', color: 'var(--text-lo)', marginBottom: '1.5rem' }}>
