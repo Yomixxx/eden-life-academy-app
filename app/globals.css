@@ -70,10 +70,12 @@ select {
   font-family: var(--font-poppins), 'Poppins', sans-serif;
 }
 
-/* Supabase's TOTP enrollment QR code is returned as a raw SVG string with
-   its own hardcoded width/height attributes, which override the container
-   div's CSS size — without this, the SVG renders at its native size and
-   spills out over the text below it instead of filling its 180x180 box. */
+/* Supabase's TOTP QR code (@supabase/auth-js) wraps the raw SVG the server
+   returns as a `data:image/svg+xml;utf-8,<svg>...` string. The component
+   strips that prefix and injects the actual SVG markup here — this rule
+   forces it to fill its 180x180 box instead of rendering at whatever
+   intrinsic width/height attributes the server-generated SVG happens to
+   carry. */
 .totp-qr-code svg {
   display: block;
   width: 100%;
