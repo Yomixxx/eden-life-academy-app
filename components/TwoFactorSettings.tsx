@@ -187,11 +187,12 @@ export default function TwoFactorSettings() {
             1. Scan this QR code with your authenticator app
           </p>
           <div
-            style={{ width: 180, height: 180, background: '#fff', borderRadius: 10, padding: 10, marginBottom: '1rem' }}
+            className="mfa-qr-box"
+            style={{ width: 180, maxWidth: '100%', aspectRatio: '1 / 1', boxSizing: 'border-box', background: '#fff', borderRadius: 10, padding: 10, marginBottom: '1rem' }}
             dangerouslySetInnerHTML={{ __html: qrCode }}
           />
-          <p style={{ fontSize: '.78rem', color: 'var(--text-lo)', marginBottom: '1.5rem' }}>
-            Can&apos;t scan it? Enter this code manually: <code style={{ color: 'var(--text-hi)', background: 'var(--bg-3)', padding: '.15rem .4rem', borderRadius: 4 }}>{secret}</code>
+          <p style={{ fontSize: '.78rem', color: 'var(--text-lo)', marginBottom: '1.5rem', overflowWrap: 'anywhere' }}>
+            Can&apos;t scan it? Enter this code manually: <code style={{ color: 'var(--text-hi)', background: 'var(--bg-3)', padding: '.15rem .4rem', borderRadius: 4, wordBreak: 'break-all' }}>{secret}</code>
           </p>
 
           <form onSubmit={handleVerify}>
@@ -208,7 +209,7 @@ export default function TwoFactorSettings() {
               required
               maxLength={6}
               style={{
-                width: 160, boxSizing: 'border-box',
+                width: 160, maxWidth: '100%', boxSizing: 'border-box',
                 background: 'var(--bg-3)', border: '1px solid var(--border)',
                 borderRadius: 10, padding: '.85rem 1rem',
                 color: 'var(--text-hi)', fontSize: '1.2rem', letterSpacing: '.4em', textAlign: 'center',
@@ -217,7 +218,7 @@ export default function TwoFactorSettings() {
               onFocus={e => { e.currentTarget.style.borderColor = 'var(--eden)' }}
               onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
             />
-            <div style={{ display: 'flex', gap: '.75rem' }}>
+            <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
               <button type="submit" disabled={busy || code.length !== 6} style={{
                 ...buttonStyle,
                 background: busy || code.length !== 6 ? 'var(--bg-3)' : 'var(--eden)',
@@ -230,6 +231,10 @@ export default function TwoFactorSettings() {
               </button>
             </div>
           </form>
+
+          <style>{`
+            .mfa-qr-box svg, .mfa-qr-box img { width: 100% !important; height: 100% !important; display: block; }
+          `}</style>
         </div>
       )}
     </div>

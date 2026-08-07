@@ -73,7 +73,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '1rem', marginBottom: '2rem' }}>
+      <div className="dash-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '1rem', marginBottom: '2rem' }}>
         {[
           { label: 'Enrolled Courses', value: enrolledCount, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--eden)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> },
           { label: 'Campus', value: profile?.campus ?? '—', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--eden)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
@@ -236,6 +236,7 @@ export default async function DashboardPage() {
 
       <style>{`
         @media (max-width: 700px) { .dash-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 480px) { .dash-stats { grid-template-columns: 1fr !important; } }
         .qa-link { transition: border-color .15s, color .15s; }
         .qa-link:hover { border-color: var(--qa-color) !important; color: var(--qa-color) !important; }
       `}</style>
