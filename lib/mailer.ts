@@ -1,13 +1,18 @@
 // Outbound app email (welcome, announcements, course reminders, pastoral
-// alerts) is relayed through a Google Apps Script Web App instead of raw
-// SMTP. Raw SMTP connections from this host were hanging for minutes before
-// failing; Apps Script only needs a normal HTTPS POST, which isn't subject
-// to the same port-level blocking/timeouts.
-const SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL
-const SCRIPT_SECRET = process.env.GOOGLE_SCRIPT_SECRET
+// alerts) is sent via Resend. Requires RESEND_API_KEY, and a verified
+// sending domain set via RESEND_FROM_EMAIL once one's configured in the
+// Resend dashboard — until then this falls back to Resend's shared
+// onboarding@resend.dev sender, which only delivers to the account's own
+// verified email address.
+import { Resend } from 'resend'
+
+const API_KEY = process.env.RESEND_API_KEY
+const FROM = process.env.RESEND_FROM_EMAIL ?? 'Eden Life Academy <onboarding@resend.dev>'
+
+const resend = API_KEY ? new Resend(API_KEY) : null
 
 export function isMailerConfigured(): boolean {
-  return !!SCRIPT_URL && !!SCRIPT_SECRET
+  return !!resend
 }
 
 interface SendEmailInput {
@@ -17,16 +22,8 @@ interface SendEmailInput {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailInput): Promise<void> {
-  if (!SCRIPT_URL || !SCRIPT_SECRET) throw new Error('Google Script mailer is not configured')
+  if (!resend) throw new Error('Resend mailer is not configured')
 
-  const res = await fetch(SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: SCRIPT_SECRET, to, subject, html, fromName: 'Eden Life Academy' }),
-  })
-
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok || data?.error) {
-    throw new Error(data?.error || `Google Script relay responded with ${res.status}`)
-  }
+  const { error } = await resend.emails.send({ from: FROM, to, subject, html })
+  if (error) throw new Error(error.message)
 }

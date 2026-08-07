@@ -6,10 +6,11 @@ import { sendPhoneAlert, isPhoneAlertConfigured } from '@/lib/health-alert'
 // Runs every few hours. Unlike /api/health (a cheap uptime ping), this
 // exercises the EXACT same relay call the crisis-escalation path in
 // /api/ai-chat uses to email pastoral staff — because "the page loads" and
-// "a crisis alert actually sends" are different failure modes, and the
-// Google Apps Script relay has already been known to silently time out.
-// Failures alert a phone via ntfy, a channel independent of the mailer
-// itself, since alerting through the thing that's broken doesn't work.
+// "a crisis alert actually sends" are different failure modes, and this
+// project's email relay has already broken silently once before (the prior
+// Google Apps Script relay it replaced). Failures alert a phone via ntfy,
+// a channel independent of the mailer itself, since alerting through the
+// thing that's broken doesn't work.
 
 const ALERT_EMAIL = process.env.HEALTH_CHECK_EMAIL || process.env.PASTORAL_ALERT_EMAIL
 
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
   }
 
   if (!isMailerConfigured()) {
-    failures.push('Email relay not configured (GOOGLE_SCRIPT_URL/SECRET missing)')
+    failures.push('Email relay not configured (RESEND_API_KEY missing)')
   } else if (!ALERT_EMAIL) {
     failures.push('No HEALTH_CHECK_EMAIL or PASTORAL_ALERT_EMAIL set to test delivery against')
   } else {
