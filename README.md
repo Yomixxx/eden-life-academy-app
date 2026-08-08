@@ -20,6 +20,8 @@ Required env vars (also needed as Vercel project env vars for production):
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `RESEND_API_KEY` — for outbound email (welcome, announcements, course reminders, pastoral crisis alerts). Get one from [resend.com](https://resend.com); without it, email sending is silently disabled.
+- `RESEND_FROM_EMAIL` — optional, e.g. `Eden Life Academy <noreply@edenlifeng.org>`. Requires verifying that sending domain in the Resend dashboard first. Falls back to Resend's shared `onboarding@resend.dev` sender, which only delivers to the Resend account's own verified email address — fine for testing, not for real users.
 
 ## How courses work
 

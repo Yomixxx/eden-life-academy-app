@@ -29,7 +29,7 @@ If either shows a live incident, it's out of our hands — post that in the anno
 | Symptom | Likely cause | What to check |
 |---|---|---|
 | Can't sign in / stuck in a redirect loop | Auth/session issue | Check Supabase → Authentication → Logs for errors |
-| Signed up but never got the welcome email; announcements not arriving; "Ask PG" crisis alerts not reaching pastoral staff | Email relay (Google Apps Script) is down | Check the daily automated result: Vercel → Project → Logs → filter for `/api/cron/health-check`. If it's been failing, redeploy the Apps Script (see `google-apps-script/Code.gs` header comment for steps) or check quota limits in the Google account running the script |
+| Signed up but never got the welcome email; announcements not arriving; "Ask PG" crisis alerts not reaching pastoral staff | Resend (email relay) is down or misconfigured | Check the daily automated result: Vercel → Project → Logs → filter for `/api/cron/health-check`. Then check the [Resend dashboard](https://resend.com/emails) for delivery failures, confirm `RESEND_API_KEY` is still valid in Vercel env vars, and confirm the sending domain (`RESEND_FROM_EMAIL`) is still verified |
 | Lesson videos/PDFs won't load | Supabase Storage issue, or file was deleted | Supabase Dashboard → Storage → `lesson-files` bucket |
 | Admin can't post an announcement / manage courses | Logged in as a non-admin account, or a permissions bug | Confirm the account's `role` is `admin` in Supabase → Table Editor → `profiles` |
 | App is very slow when a lot of people join at once (e.g. right after a service announcement) | Hobby-tier resource limits under load | Nothing to do in the moment; if this keeps happening, it's a sign to upgrade the Vercel/Supabase plan |
