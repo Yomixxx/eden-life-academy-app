@@ -189,7 +189,7 @@ export default function TwoFactorSettings() {
           <div
             className="totp-qr-code"
             style={{ width: 180, height: 180, background: '#fff', borderRadius: 10, padding: 10, marginBottom: '1rem', overflow: 'hidden', boxSizing: 'border-box' }}
-            dangerouslySetInnerHTML={{ __html: qrCode }}
+            dangerouslySetInnerHTML={{ __html: qrCode.replace(/^data:image\/svg\+xml;utf-?8,/, '') }}
           />
           <p style={{ fontSize: '.78rem', color: 'var(--text-lo)', marginBottom: '1.5rem' }}>
             Can&apos;t scan it? Enter this code manually: <code style={{ color: 'var(--text-hi)', background: 'var(--bg-3)', padding: '.15rem .4rem', borderRadius: 4 }}>{secret}</code>
