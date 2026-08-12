@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const PROTECTED = [
   '/dashboard', '/courses', '/catalog', '/certificates',
   '/bible', '/sermons', '/media', '/announcements', '/community', '/settings',
-  '/admin',
+  '/admin', '/register',
 ]
 
 const AUTH_PAGES = ['/login', '/signup']
