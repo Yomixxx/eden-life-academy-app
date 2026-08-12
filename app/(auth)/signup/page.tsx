@@ -14,6 +14,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [campus, setCampus] = useState('')
+  const [academyLevel, setAcademyLevel] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -23,9 +24,14 @@ export default function SignupPage() {
   // Lets a link like /signup?next=/catalog/<id> (e.g. a "Register" button
   // on the website) land the new member directly on that page instead of
   // the generic onboarding tour, once they've confirmed their account.
+  // The Cohort 3 "Enroll" button on the website links here with
+  // next=/register — that's also the one case where we ask which level
+  // they're enrolling for, right on this form, instead of a separate step.
   useEffect(() => {
     setNextPath(new URLSearchParams(window.location.search).get('next'))
   }, [])
+
+  const isAcademyRegistration = nextPath === '/register'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -49,7 +55,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        data: { full_name: fullName, campus },
+        data: { full_name: fullName, campus, ...(isAcademyRegistration ? { academy_level: academyLevel } : {}) },
         emailRedirectTo: `${window.location.origin}/auth/callback${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''}`,
       },
     })
@@ -188,6 +194,20 @@ export default function SignupPage() {
                   <option value="Online Church">Online Church</option>
                 </select>
               </div>
+
+              {isAcademyRegistration && (
+                <div style={{ marginBottom: '1.75rem' }}>
+                  <label style={labelStyle}>Which level are you enrolling for?</label>
+                  <select value={academyLevel} onChange={e => setAcademyLevel(e.target.value)} required style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--eden)'; e.currentTarget.style.background = 'var(--bg-3)' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-2)' }}>
+                    <option value="" disabled>Select your level</option>
+                    <option value="100">100 Level</option>
+                    <option value="200">200 Level</option>
+                    <option value="300">300 Level</option>
+                  </select>
+                </div>
+              )}
 
               <button type="submit" disabled={loading} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',

@@ -11,9 +11,14 @@ export default async function RegisterPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/signup?next=/register')
 
+  const academyLevel = typeof user.user_metadata?.academy_level === 'string' ? user.user_metadata.academy_level : null
+
   await supabase
     .from('enrollments')
-    .upsert({ user_id: user.id, course_id: COHORT_3_COURSE_ID }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
+    .upsert(
+      { user_id: user.id, course_id: COHORT_3_COURSE_ID, academy_level: academyLevel },
+      { onConflict: 'user_id,course_id', ignoreDuplicates: false }
+    )
 
   redirect(`/catalog/${COHORT_3_COURSE_ID}`)
 }
