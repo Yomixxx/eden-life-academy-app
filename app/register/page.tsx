@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 // returning visitor who signs up or logs in through it is enrolled here
 // automatically, then dropped on the course page. No manual Enroll click.
 const COHORT_3_COURSE_ID = '4b69dd08-a1ce-4f50-8a91-e35aa1d755e0'
+const COHORT_LABEL = 'Cohort 3 2026'
 
 export default async function RegisterPage() {
   const supabase = await createClient()
@@ -16,7 +17,7 @@ export default async function RegisterPage() {
   await supabase
     .from('enrollments')
     .upsert(
-      { user_id: user.id, course_id: COHORT_3_COURSE_ID, academy_level: academyLevel },
+      { user_id: user.id, course_id: COHORT_3_COURSE_ID, academy_level: academyLevel, cohort: COHORT_LABEL },
       { onConflict: 'user_id,course_id', ignoreDuplicates: false }
     )
 

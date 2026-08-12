@@ -34,6 +34,22 @@ interface Lesson {
   is_published: boolean
 }
 
+interface Enrollment {
+  id: string
+  user_id: string
+  course_id: string
+  enrolled_at: string | null
+  academy_level: string | null
+  cohort: string | null
+  matric_number: string | null
+  profiles: { full_name: string | null; phone: string | null; email: string | null } | null
+}
+
+function csvCell(value: string | null | undefined): string {
+  const s = value ?? ''
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
 const EMPTY_COURSE: Omit<Course, 'id'> = {
   title: '', description: '', category: 'foundation', level: 'beginner',
   thumbnail_url: '', duration_minutes: null, total_lessons: null,
@@ -64,6 +80,8 @@ export default function AdminCourses() {
   const [activeCourseId, setActiveCourseId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [enrollments, setEnrollments] = useState<Record<string, Enrollment[]>>({})
+  const [removingEnrollmentId, setRemovingEnrollmentId] = useState<string | null>(null)
   const supabase = createClient()
 
   async function uploadLessonFile(file: File) {
@@ -97,6 +115,50 @@ export default function AdminCourses() {
     if (lessons[courseId]) return
     const { data } = await supabase.from('lessons').select('*').eq('course_id', courseId).order('sort_order', { ascending: true })
     setLessons(prev => ({ ...prev, [courseId]: data ?? [] }))
+  }
+
+  async function loadEnrollments(courseId: string) {
+    if (enrollments[courseId]) return
+    const { data } = await supabase
+      .from('enrollments')
+      .select('id, user_id, course_id, enrolled_at, academy_level, cohort, matric_number, profiles(full_name, phone, email)')
+      .eq('course_id', courseId)
+      .order('enrolled_at', { ascending: true })
+    setEnrollments(prev => ({ ...prev, [courseId]: (data as unknown as Enrollment[]) ?? [] }))
+  }
+
+  async function removeEnrollment(enrollment: Enrollment) {
+    setRemovingEnrollmentId(enrollment.id)
+    await supabase.from('enrollments').delete().eq('id', enrollment.id)
+    setEnrollments(prev => ({
+      ...prev,
+      [enrollment.course_id]: prev[enrollment.course_id]?.filter(e => e.id !== enrollment.id) ?? [],
+    }))
+    setRemovingEnrollmentId(null)
+  }
+
+  function exportEnrollmentsCsv(course: Course) {
+    const rows = enrollments[course.id] ?? []
+    const header = ['Matric Number', 'Full Name', 'Email', 'Phone', 'Level', 'Cohort', 'Enrolled At']
+    const lines = [header.join(',')]
+    for (const e of rows) {
+      lines.push([
+        csvCell(e.matric_number),
+        csvCell(e.profiles?.full_name),
+        csvCell(e.profiles?.email),
+        csvCell(e.profiles?.phone),
+        csvCell(e.academy_level),
+        csvCell(e.cohort),
+        csvCell(e.enrolled_at),
+      ].join(','))
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${course.title.replace(/[^\w\- ]+/g, '').trim() || 'enrollments'}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   function openCreateCourse() {
@@ -141,6 +203,7 @@ export default function AdminCourses() {
     } else {
       setExpandedCourse(courseId)
       loadLessons(courseId)
+      loadEnrollments(courseId)
     }
   }
 
@@ -329,6 +392,62 @@ export default function AdminCourses() {
                               <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                               <path d="M10 11v6"/><path d="M14 11v6"/>
                             </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '1.5rem 0 .75rem' }}>
+                    <div style={{ fontSize: '.75rem', fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-lo)' }}>
+                      Enrolled Members{enrollments[course.id] ? ` (${enrollments[course.id].length})` : ''}
+                    </div>
+                    {!!enrollments[course.id]?.length && (
+                      <button onClick={() => exportEnrollmentsCsv(course)} style={{ ...btnSecondary, padding: '.4rem .85rem', fontSize: '.78rem', display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Export CSV
+                      </button>
+                    )}
+                  </div>
+                  {!enrollments[course.id] ? (
+                    <div style={{ color: 'var(--text-lo)', fontSize: '.85rem' }}>Loading…</div>
+                  ) : enrollments[course.id].length === 0 ? (
+                    <div style={{ color: 'var(--text-lo)', fontSize: '.85rem' }}>No one has enrolled in this course yet.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+                      {enrollments[course.id].map(enrollment => (
+                        <div key={enrollment.id} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 10, padding: '.65rem 1rem', flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1 1 200px', minWidth: 200 }}>
+                            <div style={{ fontSize: '.88rem', fontWeight: 500, color: 'var(--text-hi)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {enrollment.profiles?.full_name ?? 'Unnamed'}
+                            </div>
+                            <div style={{ fontSize: '.72rem', color: 'var(--text-lo)', marginTop: 2 }}>
+                              {enrollment.profiles?.email ?? enrollment.profiles?.phone ?? '—'} · Enrolled {enrollment.enrolled_at ? new Date(enrollment.enrolled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            </div>
+                          </div>
+                          {enrollment.academy_level && (
+                            <span style={{ fontSize: '.7rem', padding: '.15rem .55rem', background: 'var(--bg-3)', borderRadius: 99, color: 'var(--text-lo)' }}>{enrollment.academy_level} Level</span>
+                          )}
+                          {enrollment.matric_number && (
+                            <span style={{ fontSize: '.7rem', padding: '.15rem .55rem', background: 'rgba(94,201,87,.12)', borderRadius: 99, color: '#5ec957', fontFamily: 'monospace' }}>{enrollment.matric_number}</span>
+                          )}
+                          <button
+                            onClick={() => { if (confirm(`Remove ${enrollment.profiles?.full_name ?? 'this member'} from this course?`)) removeEnrollment(enrollment) }}
+                            disabled={removingEnrollmentId === enrollment.id}
+                            style={{
+                              background: 'transparent', border: '1px solid var(--border)', borderRadius: 8,
+                              padding: '.35rem .75rem', fontSize: '.78rem', fontWeight: 500,
+                              cursor: removingEnrollmentId === enrollment.id ? 'not-allowed' : 'pointer',
+                              color: 'var(--text-lo)', opacity: removingEnrollmentId === enrollment.id ? 0.5 : 1,
+                              transition: 'color .15s, border-color .15s',
+                              fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.color = '#fca5a5'; e.currentTarget.style.borderColor = '#fca5a5' }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-lo)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                          >
+                            {removingEnrollmentId === enrollment.id ? 'Removing…' : 'Remove'}
                           </button>
                         </div>
                       ))}
