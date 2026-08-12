@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { authErrorMessage } from '@/lib/auth-error'
@@ -17,7 +17,15 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [nextPath, setNextPath] = useState<string | null>(null)
   const supabase = createClient()
+
+  // Lets a link like /signup?next=/catalog/<id> (e.g. a "Register" button
+  // on the website) land the new member directly on that page instead of
+  // the generic onboarding tour, once they've confirmed their account.
+  useEffect(() => {
+    setNextPath(new URLSearchParams(window.location.search).get('next'))
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -42,7 +50,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { full_name: fullName, campus },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''}`,
       },
     })
     if (error) {
@@ -58,7 +66,7 @@ export default function SignupPage() {
       await supabase.from('profiles').update({ campus }).eq('id', data.session.user.id)
       await enrollInGrowthSteps(supabase, data.session.user.id)
       fetch('/api/welcome', { method: 'POST' }).catch(() => {})
-      router.push('/onboarding')
+      router.push(nextPath ?? '/onboarding')
       router.refresh()
       return
     }
@@ -205,7 +213,7 @@ export default function SignupPage() {
 
               <p style={{ marginTop: '.75rem', textAlign: 'center', fontSize: '.88rem', color: 'var(--text-lo)' }}>
                 Already have an account?{' '}
-                <a href="/login" style={{ color: 'var(--eden)', fontWeight: 600 }}>Sign In</a>
+                <a href={nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : '/login'} style={{ color: 'var(--eden)', fontWeight: 600 }}>Sign In</a>
               </p>
             </form>
           )}

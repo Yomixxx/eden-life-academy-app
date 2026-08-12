@@ -13,12 +13,14 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [nextPath, setNextPath] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const err = params.get('error')
     if (err) setError(decodeURIComponent(err))
+    setNextPath(params.get('next'))
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -30,7 +32,7 @@ export default function LoginPage() {
       setError(authErrorMessage(error, 'We could not sign you in right now. Please try again in a moment.'))
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      router.push(nextPath ?? '/dashboard')
       router.refresh()
     }
   }
@@ -40,7 +42,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''}`,
       },
     })
     if (error) setError(authErrorMessage(error, 'We could not sign you in with Google right now. Please try again in a moment.'))
@@ -258,7 +260,7 @@ export default function LoginPage() {
 
           <p style={{ marginTop: '1.75rem', textAlign: 'center', fontSize: '.88rem', color: 'var(--text-lo)' }}>
             New to Eden Life Academy?{' '}
-            <a href="/signup" style={{ color: 'var(--eden)', fontWeight: 600 }}>Create an account</a>
+            <a href={nextPath ? `/signup?next=${encodeURIComponent(nextPath)}` : '/signup'} style={{ color: 'var(--eden)', fontWeight: 600 }}>Create an account</a>
           </p>
         </form>
       </main>

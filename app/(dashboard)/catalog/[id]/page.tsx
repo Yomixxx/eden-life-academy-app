@@ -13,7 +13,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/catalog/${id}`)}`)
 
   const [courseRes, lessonsRes, enrollmentRes, progressRes] = await Promise.all([
     supabase.from('courses').select('*').eq('id', id).single(),

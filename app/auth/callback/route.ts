@@ -31,10 +31,10 @@ export async function GET(request: Request) {
           await supabase.from('profiles').update({ campus: metaCampus }).eq('id', data.user.id)
           await enrollInGrowthSteps(supabase, data.user.id)
           if (data.user.email) await sendWelcomeEmail(data.user.email, firstName)
-          return NextResponse.redirect(`${origin}/onboarding`)
+          return NextResponse.redirect(`${origin}${next !== '/dashboard' ? next : '/onboarding'}`)
         }
 
-        return NextResponse.redirect(`${origin}/setup-campus`)
+        return NextResponse.redirect(`${origin}/setup-campus${next !== '/dashboard' ? `?next=${encodeURIComponent(next)}` : ''}`)
       }
 
       return NextResponse.redirect(`${origin}${next}`)
