@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { enrollInGrowthSteps } from '@/lib/onboarding'
@@ -17,7 +17,12 @@ export default function SetupCampusPage() {
   const [selected, setSelected] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [nextPath, setNextPath] = useState<string | null>(null)
   const supabase = createClient()
+
+  useEffect(() => {
+    setNextPath(new URLSearchParams(window.location.search).get('next'))
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -42,7 +47,7 @@ export default function SetupCampusPage() {
     // derived server-side from the session, not from this request body.
     fetch('/api/welcome', { method: 'POST' }).catch(() => {})
 
-    router.replace('/onboarding')
+    router.replace(nextPath ?? '/onboarding')
   }
 
   return (

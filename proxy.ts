@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const PROTECTED = [
   '/dashboard', '/courses', '/catalog', '/certificates',
   '/bible', '/sermons', '/media', '/announcements', '/community', '/settings',
-  '/admin',
+  '/admin', '/register',
 ]
 
 const AUTH_PAGES = ['/login', '/signup']
@@ -45,7 +45,10 @@ export async function proxy(request: NextRequest) {
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
+    const originalPath = url.pathname + url.search
     url.pathname = '/login'
+    url.search = ''
+    url.searchParams.set('next', originalPath)
     return NextResponse.redirect(url)
   }
 
