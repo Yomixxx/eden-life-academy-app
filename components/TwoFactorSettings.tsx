@@ -120,6 +120,11 @@ export default function TwoFactorSettings() {
       return
     }
     setMsg('Two-factor authentication has been disabled.')
+    fetch('/api/account/security-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'two_factor_disabled' }),
+    }).catch(() => {})
     await refreshFactors()
     setTimeout(() => setMsg(''), 5000)
   }

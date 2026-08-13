@@ -135,3 +135,119 @@ export function announcementEmail(firstName: string, title: string, body: string
     ${signature()}
   `)
 }
+
+// ── Registration confirmation (sent once, on first enrollment) ──────────────
+export function registrationConfirmationEmail(firstName: string, courseTitle: string, level: string | null, matricNumber: string | null, appUrl: string): string {
+  const body = `Beloved ${firstName},
+
+You are officially registered for ${courseTitle}. We are glad you said yes to this.
+
+Come ready to grow.`
+
+  return wrapInLayout(`
+    <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#5ec957;">Registration Confirmed</p>
+    ${paragraphs(body)}
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;background:#0a0f0d;border:1px solid #1e2d22;border-radius:8px;">
+      <tr><td style="padding:16px 18px;">
+        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Course</p>
+        <p style="margin:0 0 12px;font-size:15px;font-weight:bold;color:#f1f5f2;">${escapeHtml(courseTitle)}</p>
+        ${level ? `<p style="margin:0 0 4px;font-size:12px;color:#64748b;">Level</p><p style="margin:0 0 12px;font-size:15px;font-weight:bold;color:#f1f5f2;">${escapeHtml(level)} Level</p>` : ''}
+        ${matricNumber ? `<p style="margin:0 0 4px;font-size:12px;color:#64748b;">Matric Number</p><p style="margin:0;font-size:15px;font-weight:bold;color:#5ec957;font-family:monospace;">${escapeHtml(matricNumber)}</p>` : ''}
+      </td></tr>
+    </table>
+    ${ctaButton(`${appUrl}/catalog`, 'View Your Course')}
+    ${signature()}
+  `)
+}
+
+// ── Certificate earned (sent when a member completes a course) ──────────────
+export function certificateEmail(firstName: string, courseTitle: string, certificateNumber: string, appUrl: string): string {
+  const body = `Beloved ${firstName},
+
+You have completed ${courseTitle}. This is not a small thing. You showed up, you finished, and heaven takes note of faithfulness.
+
+I declare that this is only the beginning of what God will do through you.`
+
+  return wrapInLayout(`
+    <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#5ec957;">Certificate Earned</p>
+    ${paragraphs(body)}
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;background:#0a0f0d;border:1px solid #1e2d22;border-radius:8px;">
+      <tr><td style="padding:16px 18px;">
+        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Certificate Number</p>
+        <p style="margin:0;font-size:15px;font-weight:bold;color:#5ec957;font-family:monospace;">${escapeHtml(certificateNumber)}</p>
+      </td></tr>
+    </table>
+    ${ctaButton(`${appUrl}/certificates`, 'View Your Certificate')}
+    ${signature()}
+  `)
+}
+
+// ── Security alert (sent when a password is changed or 2FA is disabled) ─────
+export function securityAlertEmail(firstName: string, action: string, appUrl: string): string {
+  return wrapInLayout(`
+    <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#f87171;">Security Alert</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#e2e8f0;">Dear ${escapeHtml(firstName)},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#e2e8f0;">This is a confirmation that <strong>${escapeHtml(action)}</strong> on your Eden Life Academy account just now.</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#94a3b8;">If this was you, no action is needed. If you do not recognize this, please secure your account immediately and contact us.</p>
+    ${ctaButton(`${appUrl}/settings`, 'Review Account Settings')}
+  `)
+}
+
+// ── Weekly digest (new sermons and announcements from the past week) ────────
+export function weeklyDigestEmail(
+  firstName: string,
+  sermons: { title: string; speaker: string | null; scripture_reference: string | null }[],
+  announcements: { title: string; body: string | null }[],
+  appUrl: string
+): string {
+  const sermonRows = sermons.map(s => `
+    <tr><td style="padding:10px 0;border-bottom:1px solid #1e2d22;">
+      <p style="margin:0 0 2px;font-size:14px;font-weight:bold;color:#f1f5f2;">${escapeHtml(s.title)}</p>
+      <p style="margin:0;font-size:12px;color:#64748b;">${[s.speaker, s.scripture_reference].filter((x): x is string => Boolean(x)).map(escapeHtml).join(' · ')}</p>
+    </td></tr>`).join('')
+
+  const announcementRows = announcements.map(a => `
+    <tr><td style="padding:10px 0;border-bottom:1px solid #1e2d22;">
+      <p style="margin:0 0 2px;font-size:14px;font-weight:bold;color:#f1f5f2;">${escapeHtml(a.title)}</p>
+      ${a.body ? `<p style="margin:0;font-size:12px;color:#64748b;">${escapeHtml(a.body.slice(0, 120))}${a.body.length > 120 ? '…' : ''}</p>` : ''}
+    </td></tr>`).join('')
+
+  return wrapInLayout(`
+    <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#5ec957;">This Week at Eden Life</p>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#e2e8f0;">Beloved ${escapeHtml(firstName)}, here's what's new this week.</p>
+    ${sermons.length > 0 ? `
+      <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#5ec957;">New Sermons</p>
+      <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;">${sermonRows}</table>
+    ` : ''}
+    ${announcements.length > 0 ? `
+      <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#5ec957;">Announcements</p>
+      <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;">${announcementRows}</table>
+    ` : ''}
+    ${ctaButton(`${appUrl}/dashboard`, 'Open the App')}
+    ${signature()}
+  `)
+}
+
+// ── Sunday service reminder (sent the day before) ────────────────────────────
+export function sundayReminderEmail(firstName: string, campus: string | null, appUrl: string): string {
+  const body = `Beloved ${firstName},
+
+Do not miss this. Join us tomorrow, Sunday, 10:00 AM, as we gather to worship and hear from the Word together.
+
+I am looking forward to seeing you there.`
+
+  return wrapInLayout(`
+    <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#5ec957;">See You Tomorrow</p>
+    ${paragraphs(body)}
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;background:#0a0f0d;border:1px solid #1e2d22;border-radius:8px;">
+      <tr><td style="padding:16px 18px;">
+        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Sunday Service</p>
+        <p style="margin:0 0 12px;font-size:15px;font-weight:bold;color:#f1f5f2;">10:00 AM, Lagos time</p>
+        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Your Campus</p>
+        <p style="margin:0;font-size:15px;font-weight:bold;color:#f1f5f2;">${escapeHtml(campus ?? 'Mainland — Ogudu, or Online Church')}</p>
+      </td></tr>
+    </table>
+    ${ctaButton(`${appUrl}/dashboard`, 'Open the App')}
+    ${signature()}
+  `)
+}
