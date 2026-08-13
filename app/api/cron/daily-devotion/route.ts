@@ -18,7 +18,15 @@ interface Devotion {
   body: string
 }
 
+// Pollinations.ai's free legacy text API (previously used here) started
+// returning 402 Payment Required for the model this route relied on —
+// an upstream change, not something this app broke. Groq's free tier is
+// the replacement; GROQ_API_KEY was already provisioned in this project
+// but unused anywhere until now.
 async function generateDevotion(dateStr: string): Promise<Devotion> {
+  const groqKey = process.env.GROQ_API_KEY
+  if (!groqKey) throw new Error('GROQ_API_KEY is not configured')
+
   const prompt = `You are Senior Pastor Gbenga Ajibola of Eden Life Experience Centre, Lagos, Nigeria.
 Generate a daily devotional for Eden Life Academy members for ${dateStr}.
 
@@ -29,15 +37,31 @@ Return a JSON object with exactly these three fields:
 
 Return ONLY valid JSON. No explanation. No extra text.`
 
-  const seed = dateStr.replace(/-/g, '')
-  const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai&seed=${seed}&json=true`
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${groqKey}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      seed: Number(dateStr.replace(/-/g, '')),
+    }),
+    next: { revalidate: 0 },
+  })
 
-  const res = await fetch(url, { next: { revalidate: 0 } })
-  const raw = (await res.text()).trim()
-  const text = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '')
+    throw new Error(`Groq API error ${res.status}: ${errText.slice(0, 300)}`)
+  }
 
-  const match = text.match(/\{[\s\S]*?\}/)
-  if (!match) throw new Error('No JSON in Pollinations response')
+  const data = await res.json()
+  const text: string = data.choices?.[0]?.message?.content ?? ''
+
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) throw new Error('No JSON in Groq response')
 
   const parsed = JSON.parse(match[0])
   if (!parsed.scripture_reference || !parsed.scripture_text || !parsed.body) {
