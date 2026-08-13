@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { devotionEmail } from '@/lib/email-templates'
 
-// Runs daily at 6am UTC (7am Lagos, UTC+1)
+// Runs daily at 5am UTC (6am Lagos, UTC+1)
 // Generates a devotional in PG's voice, stores it for in-app display on
 // /devotion, and emails it to every member with an address on file. The
 // emailed_at column makes the email step idempotent, same as the existing
