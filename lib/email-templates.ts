@@ -107,6 +107,23 @@ export function pastoralAlertEmail(category: string, message: string, appUrl: st
   `)
 }
 
+// ── Daily devotion (sent each morning to every member with an email) ────────
+export function devotionEmail(firstName: string, scriptureRef: string, scriptureText: string, body: string, appUrl: string): string {
+  return wrapInLayout(`
+    <p style="margin:0 0 16px;font-size:10px;font-weight:bold;letter-spacing:0.22em;text-transform:uppercase;color:#5ec957;">Today's Devotion</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#e2e8f0;">Beloved ${escapeHtml(firstName)},</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;background:#0a0f0d;border:1px solid #1e2d22;border-radius:8px;">
+      <tr><td style="padding:16px 18px;">
+        <p style="margin:0 0 6px;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#5ec957;">${escapeHtml(scriptureRef)}</p>
+        <p style="margin:0;font-size:14px;line-height:1.7;color:#94a3b8;font-style:italic;">"${escapeHtml(scriptureText)}"</p>
+      </td></tr>
+    </table>
+    ${paragraphs(body)}
+    ${ctaButton(`${appUrl}/devotion`, 'Read in the App')}
+    ${signature()}
+  `)
+}
+
 // ── Announcement broadcast (sent when an announcement goes live) ────────────
 export function announcementEmail(firstName: string, title: string, body: string, appUrl: string): string {
   return wrapInLayout(`

@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail, isMailerConfigured } from '@/lib/mailer'
+import { devotionEmail } from '@/lib/email-templates'
 
 // Runs daily at 6am UTC (7am Lagos, UTC+1)
-// Generates a devotional in PG's voice and stores it for in-app display on /devotion
+// Generates a devotional in PG's voice, stores it for in-app display on
+// /devotion, and emails it to every member with an address on file. The
+// emailed_at column makes the email step idempotent, same as the existing
+// generation check above it — a re-invocation on a day already emailed
+// won't send a second round.
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
 
 interface Devotion {
   scripture_reference: string
@@ -64,21 +72,49 @@ export async function GET(req: Request) {
       .eq('date', today)
       .maybeSingle()
 
-    if (existing) {
-      return NextResponse.json({ date: today, scripture: existing.scripture_reference, created: false })
+    let devotion = existing
+    let created = false
+
+    if (!devotion) {
+      const generated = await generateDevotion(today)
+      const { data, error } = await supabase
+        .from('daily_devotions')
+        .insert({ date: today, ...generated })
+        .select()
+        .single()
+      if (error || !data) {
+        return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 })
+      }
+      devotion = data
+      created = true
     }
 
-    const generated = await generateDevotion(today)
-    const { data, error } = await supabase
-      .from('daily_devotions')
-      .insert({ date: today, ...generated })
-      .select()
-      .single()
-    if (error || !data) {
-      return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 })
+    let emailed = 0
+    if (!devotion.emailed_at && isMailerConfigured()) {
+      const { data: recipients } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .not('email', 'is', null)
+
+      for (const recipient of recipients ?? []) {
+        if (!recipient.email) continue
+        const firstName = recipient.full_name?.split(' ')[0] ?? 'Friend'
+        try {
+          await sendEmail({
+            to: recipient.email,
+            subject: `Today's Devotion — ${devotion.scripture_reference}`,
+            html: devotionEmail(firstName, devotion.scripture_reference, devotion.scripture_text, devotion.body, APP_URL),
+          })
+          emailed++
+        } catch {
+          // continue on individual send failure — one bad address shouldn't block the rest
+        }
+      }
+
+      await supabase.from('daily_devotions').update({ emailed_at: new Date().toISOString() }).eq('id', devotion.id)
     }
 
-    return NextResponse.json({ date: today, scripture: data.scripture_reference, created: true })
+    return NextResponse.json({ date: today, scripture: devotion.scripture_reference, created, emailed })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: msg }, { status: 500 })
