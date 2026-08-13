@@ -52,6 +52,16 @@ export default function LessonItem({ lesson, completed, locked, index }: LessonI
     if (!error) {
       setIsDone(nextDone)
       router.refresh()
+      // Best-effort — the endpoint itself checks whether every lesson in
+      // the course is now complete before issuing anything, so this is
+      // safe to fire on every completion, not just the last one.
+      if (nextDone) {
+        fetch('/api/certificates/issue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ courseId: lesson.course_id }),
+        }).catch(() => {})
+      }
     }
   }
 

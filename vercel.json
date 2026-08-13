@@ -16,6 +16,14 @@
     {
       "path": "/api/cron/health-check",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-digest",
+      "schedule": "0 16 * * 5"
+    },
+    {
+      "path": "/api/cron/sunday-reminder",
+      "schedule": "0 17 * * 6"
     }
   ]
 }

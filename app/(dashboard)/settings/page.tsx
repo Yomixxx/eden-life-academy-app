@@ -79,6 +79,11 @@ export default function SettingsPage() {
     } else {
       setPwMsg('Password updated successfully.')
       setCurrentPw(''); setNewPw(''); setConfirmPw('')
+      fetch('/api/account/security-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'password_changed' }),
+      }).catch(() => {})
     }
     setTimeout(() => setPwMsg(''), 5000)
   }
