@@ -17,6 +17,7 @@ export interface Course {
   total_lessons: number | null
   duration_minutes: number | null
   is_published: boolean
+  is_locked: boolean
   sort_order: number | null
 }
 

@@ -26,6 +26,18 @@ function CourseCard({ course, enrollCount }: { course: Course; enrollCount: numb
           </span>
         )}
       </div>
+      {course.is_locked && (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '.35rem', width: 'fit-content',
+          fontSize: '.68rem', fontWeight: 600, color: '#f97316',
+          background: 'rgba(249,115,22,.1)', padding: '.25rem .6rem', borderRadius: 20,
+        }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          Opens when session begins
+        </span>
+      )}
       <h3 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-hi)', lineHeight: 1.3 }}>{course.title}</h3>
       {course.description && (
         <p style={{ fontSize: '.83rem', color: 'var(--text-lo)', lineHeight: 1.6 }}>{course.description}</p>
