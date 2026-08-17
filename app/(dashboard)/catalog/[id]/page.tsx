@@ -27,6 +27,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const course = courseRes.data
   const lessons = lessonsRes.data ?? []
   const enrolled = !!enrollmentRes.data
+  const locked = !enrolled || course.is_locked
   const completedIds = new Set((progressRes.data ?? []).filter(p => p.completed).map(p => p.lesson_id))
   const completedCount = lessons.filter(l => completedIds.has(l.id)).length
   const progressPct = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0
@@ -76,6 +77,21 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
         )}
       </div>
 
+      {enrolled && course.is_locked && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '.75rem',
+          background: 'rgba(249,115,22,.08)', border: '1px solid rgba(249,115,22,.25)',
+          borderRadius: 12, padding: '.9rem 1.1rem', marginBottom: '1.75rem',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <p style={{ fontSize: '.85rem', color: 'var(--text-md)', margin: 0 }}>
+            You&apos;re enrolled — lessons unlock once the session begins. We&apos;ll let you know when they&apos;re open.
+          </p>
+        </div>
+      )}
+
       <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-hi)', marginBottom: '1rem' }}>
         Lessons
       </h2>
@@ -91,7 +107,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
               key={lesson.id}
               lesson={lesson}
               completed={completedIds.has(lesson.id)}
-              locked={!enrolled}
+              locked={locked}
               index={i}
             />
           ))}

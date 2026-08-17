@@ -16,6 +16,7 @@ interface Course {
   duration_minutes: number | null
   total_lessons: number | null
   is_published: boolean
+  is_locked: boolean
   sort_order: number | null
 }
 
@@ -53,7 +54,7 @@ function csvCell(value: string | null | undefined): string {
 const EMPTY_COURSE: Omit<Course, 'id'> = {
   title: '', description: '', category: 'foundation', level: 'beginner',
   thumbnail_url: '', duration_minutes: null, total_lessons: null,
-  is_published: false, sort_order: null,
+  is_published: false, is_locked: true, sort_order: null,
 }
 
 const EMPTY_LESSON: Omit<Lesson, 'id' | 'course_id'> = {
@@ -191,6 +192,11 @@ export default function AdminCourses() {
     setCourses(prev => prev.map(c => c.id === course.id ? { ...c, is_published: !c.is_published } : c))
   }
 
+  async function toggleLocked(course: Course) {
+    await supabase.from('courses').update({ is_locked: !course.is_locked }).eq('id', course.id)
+    setCourses(prev => prev.map(c => c.id === course.id ? { ...c, is_locked: !c.is_locked } : c))
+  }
+
   async function deleteCourse(id: string) {
     await supabase.from('courses').delete().eq('id', id)
     setCourses(prev => prev.filter(c => c.id !== id))
@@ -322,6 +328,27 @@ export default function AdminCourses() {
                     }}
                   >
                     {course.is_published ? 'Published' : 'Draft'}
+                  </button>
+                  <button
+                    onClick={() => toggleLocked(course)}
+                    title={course.is_locked ? 'Locked — students cannot open lessons yet' : 'Unlocked — lessons are accessible to enrolled students'}
+                    style={{
+                      fontSize: '.72rem', fontWeight: 600, padding: '.3rem .75rem',
+                      borderRadius: 99, border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '.35rem',
+                      background: course.is_locked ? 'rgba(249,115,22,.15)' : 'var(--bg-3)',
+                      color: course.is_locked ? '#f97316' : 'var(--text-lo)',
+                      transition: 'background .15s, color .15s',
+                    }}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      {course.is_locked ? (
+                        <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>
+                      ) : (
+                        <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></>
+                      )}
+                    </svg>
+                    {course.is_locked ? 'Locked' : 'Unlocked'}
                   </button>
                   <button onClick={() => openEditCourse(course)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-lo)', padding: '.25rem', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'color .15s' }}
                     onMouseEnter={e => e.currentTarget.style.color = 'var(--text-hi)'}
@@ -515,6 +542,10 @@ export default function AdminCourses() {
               <label style={{ display: 'flex', alignItems: 'center', gap: '.65rem', cursor: 'pointer' }}>
                 <input type="checkbox" checked={courseForm.is_published} onChange={e => setCourseForm(p => ({ ...p, is_published: e.target.checked }))} style={{ width: 16, height: 16, cursor: 'pointer' }} />
                 <span style={{ fontSize: '.9rem', color: 'var(--text-md)' }}>Publish immediately</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '.65rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={courseForm.is_locked} onChange={e => setCourseForm(p => ({ ...p, is_locked: e.target.checked }))} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                <span style={{ fontSize: '.9rem', color: 'var(--text-md)' }}>Locked until session begins (students can enroll, but lessons stay closed until you unlock)</span>
               </label>
             </div>
             <div style={{ display: 'flex', gap: '.75rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
