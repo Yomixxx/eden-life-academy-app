@@ -2,13 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { registrationConfirmationEmail } from '@/lib/email-templates'
+import { CURRENT_COHORT_COURSE_ID, CURRENT_COHORT_COURSE_TITLE, CURRENT_COHORT_LABEL } from '@/lib/academy'
 
 // This is the one central "register for Cohort 3" link — every new or
 // returning visitor who signs up or logs in through it is enrolled here
 // automatically, then dropped on the course page. No manual Enroll click.
-const COHORT_3_COURSE_ID = '4b69dd08-a1ce-4f50-8a91-e35aa1d755e0'
-const COHORT_3_TITLE = 'EdenLife Academy (ELA) — Cohort 3'
-const COHORT_LABEL = 'Cohort 3 2026'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
 
 export default async function RegisterPage() {
@@ -24,13 +22,13 @@ export default async function RegisterPage() {
     .from('enrollments')
     .select('id')
     .eq('user_id', user.id)
-    .eq('course_id', COHORT_3_COURSE_ID)
+    .eq('course_id', CURRENT_COHORT_COURSE_ID)
     .maybeSingle()
 
   const { data: enrollment } = await supabase
     .from('enrollments')
     .upsert(
-      { user_id: user.id, course_id: COHORT_3_COURSE_ID, academy_level: academyLevel, cohort: COHORT_LABEL },
+      { user_id: user.id, course_id: CURRENT_COHORT_COURSE_ID, academy_level: academyLevel, cohort: CURRENT_COHORT_LABEL },
       { onConflict: 'user_id,course_id', ignoreDuplicates: false }
     )
     .select('matric_number')
@@ -42,13 +40,13 @@ export default async function RegisterPage() {
     try {
       await sendEmail({
         to: user.email,
-        subject: 'You are registered — EdenLife Academy Cohort 3',
-        html: registrationConfirmationEmail(firstName, COHORT_3_TITLE, academyLevel, enrollment?.matric_number ?? null, APP_URL),
+        subject: `You are registered — ${CURRENT_COHORT_COURSE_TITLE}`,
+        html: registrationConfirmationEmail(firstName, CURRENT_COHORT_COURSE_TITLE, academyLevel, enrollment?.matric_number ?? null, APP_URL),
       })
     } catch {
       // Best-effort — never block registration on email delivery.
     }
   }
 
-  redirect(`/catalog/${COHORT_3_COURSE_ID}`)
+  redirect(`/catalog/${CURRENT_COHORT_COURSE_ID}`)
 }
