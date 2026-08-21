@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { CURRENT_COHORT_COURSE_ID } from '@/lib/academy'
 
 const ACCENT = '#f97316'
 const MAX_LESSON_FILE_SIZE_BYTES = 100 * 1024 * 1024
@@ -83,6 +84,7 @@ export default function AdminCourses() {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [enrollments, setEnrollments] = useState<Record<string, Enrollment[]>>({})
   const [removingEnrollmentId, setRemovingEnrollmentId] = useState<string | null>(null)
+  const [exportingId, setExportingId] = useState<string | null>(null)
   const supabase = createClient()
 
   async function uploadLessonFile(file: File) {
@@ -112,6 +114,8 @@ export default function AdminCourses() {
 
   useEffect(() => { load() }, [load])
 
+  const cohortCourse = courses.find(c => c.id === CURRENT_COHORT_COURSE_ID) ?? null
+
   async function loadLessons(courseId: string) {
     if (lessons[courseId]) return
     const { data } = await supabase.from('lessons').select('*').eq('course_id', courseId).order('sort_order', { ascending: true })
@@ -138,8 +142,23 @@ export default function AdminCourses() {
     setRemovingEnrollmentId(null)
   }
 
-  function exportEnrollmentsCsv(course: Course) {
-    const rows = enrollments[course.id] ?? []
+  async function exportEnrollmentsCsv(course: Course) {
+    let rows = enrollments[course.id]
+    if (!rows) {
+      setExportingId(course.id)
+      const { data } = await supabase
+        .from('enrollments')
+        .select('id, user_id, course_id, enrolled_at, academy_level, cohort, matric_number, profiles(full_name, phone, email)')
+        .eq('course_id', course.id)
+        .order('enrolled_at', { ascending: true })
+      rows = (data as unknown as Enrollment[]) ?? []
+      setEnrollments(prev => ({ ...prev, [course.id]: rows! }))
+      setExportingId(null)
+    }
+    if (rows.length === 0) {
+      alert('No one has enrolled in this course yet.')
+      return
+    }
     const header = ['Matric Number', 'Full Name', 'Email', 'Phone', 'Level', 'Cohort', 'Enrolled At']
     const lines = [header.join(',')]
     for (const e of rows) {
@@ -282,12 +301,30 @@ export default function AdminCourses() {
           <div style={{ fontSize: '.68rem', fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase', color: ACCENT, marginBottom: '.35rem' }}>Admin</div>
           <h1 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: '1.6rem', color: 'var(--text-hi)', margin: 0 }}>Courses</h1>
         </div>
-        <button onClick={openCreateCourse} style={{ ...btnPrimary, display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          New Course
-        </button>
+        <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
+          {cohortCourse && (
+            <button
+              onClick={() => exportEnrollmentsCsv(cohortCourse)}
+              disabled={exportingId === cohortCourse.id}
+              style={{
+                ...btnSecondary, display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0,
+                cursor: exportingId === cohortCourse.id ? 'not-allowed' : 'pointer',
+                opacity: exportingId === cohortCourse.id ? 0.6 : 1,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              {exportingId === cohortCourse.id ? 'Exporting…' : 'Export Cohort 3 Roster'}
+            </button>
+          )}
+          <button onClick={openCreateCourse} style={{ ...btnPrimary, display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New Course
+          </button>
+        </div>
       </div>
 
       {loading ? (
