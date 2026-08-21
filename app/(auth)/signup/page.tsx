@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [campus, setCampus] = useState('')
   const [academyLevel, setAcademyLevel] = useState('')
+  const [enrollChoice, setEnrollChoice] = useState<'enroll' | 'explore' | ''>('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -31,11 +32,22 @@ export default function SignupPage() {
     setNextPath(new URLSearchParams(window.location.search).get('next'))
   }, [])
 
-  const isAcademyRegistration = nextPath === '/register'
+  // Coming from the website's dedicated Enroll link means enrollment is
+  // already the intent. Anyone else creating an account (the "traditional"
+  // path) gets asked explicitly — they can always enroll later from the
+  // course catalog instead, and until they do, the course stays locked.
+  const forcedAcademyRegistration = nextPath === '/register'
+  const isAcademyRegistration = forcedAcademyRegistration || enrollChoice === 'enroll'
+  const finalRedirect = isAcademyRegistration ? '/register' : (nextPath ?? '/onboarding')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (!forcedAcademyRegistration && !enrollChoice) {
+      setError('Please let us know if you\'d like to enroll in the Academy now or just explore first.')
+      return
+    }
 
     const strengthError = passwordStrengthError(password)
     if (strengthError) {
@@ -56,7 +68,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { full_name: fullName, campus, ...(isAcademyRegistration ? { academy_level: academyLevel } : {}) },
-        emailRedirectTo: `${window.location.origin}/auth/callback${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(finalRedirect)}`,
       },
     })
     if (error) {
@@ -72,7 +84,7 @@ export default function SignupPage() {
       await supabase.from('profiles').update({ campus }).eq('id', data.session.user.id)
       await enrollInGrowthSteps(supabase, data.session.user.id)
       fetch('/api/welcome', { method: 'POST' }).catch(() => {})
-      router.push(nextPath ?? '/onboarding')
+      router.push(finalRedirect)
       router.refresh()
       return
     }
@@ -194,6 +206,43 @@ export default function SignupPage() {
                   <option value="Online Church">Online Church</option>
                 </select>
               </div>
+
+              {!forcedAcademyRegistration && (
+                <div style={{ marginBottom: '1.75rem' }}>
+                  <label style={labelStyle}>Would you like to enroll in EdenLife Academy now?</label>
+                  <div style={{ display: 'flex', gap: '.75rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setEnrollChoice('enroll')}
+                      style={{
+                        flex: 1, padding: '.85rem', borderRadius: 10, cursor: 'pointer',
+                        border: `1px solid ${enrollChoice === 'enroll' ? 'var(--eden)' : 'var(--border)'}`,
+                        background: enrollChoice === 'enroll' ? 'rgba(94,201,87,.12)' : 'var(--bg-2)',
+                        color: enrollChoice === 'enroll' ? 'var(--eden)' : 'var(--text-md)',
+                        fontWeight: 600, fontSize: '.85rem',
+                      }}
+                    >
+                      Yes, enroll me
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEnrollChoice('explore')}
+                      style={{
+                        flex: 1, padding: '.85rem', borderRadius: 10, cursor: 'pointer',
+                        border: `1px solid ${enrollChoice === 'explore' ? 'var(--eden)' : 'var(--border)'}`,
+                        background: enrollChoice === 'explore' ? 'rgba(94,201,87,.12)' : 'var(--bg-2)',
+                        color: enrollChoice === 'explore' ? 'var(--eden)' : 'var(--text-md)',
+                        fontWeight: 600, fontSize: '.85rem',
+                      }}
+                    >
+                      Just exploring for now
+                    </button>
+                  </div>
+                  <p style={{ marginTop: '.5rem', fontSize: '.78rem', color: 'var(--text-lo)' }}>
+                    Course content stays locked until you enroll — you can always do that later from the course catalog.
+                  </p>
+                </div>
+              )}
 
               {isAcademyRegistration && (
                 <div style={{ marginBottom: '1.75rem' }}>
