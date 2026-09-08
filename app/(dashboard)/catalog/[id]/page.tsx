@@ -51,8 +51,9 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
         Back to Catalog
       </a>
 
-      <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexWrap: 'wrap', marginBottom: '.75rem' }}>
+      <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.75rem', marginBottom: '1.75rem', boxShadow: '0 20px 46px -28px rgba(0,0,0,.7)' }}>
+        <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(52,211,153,.12), transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexWrap: 'wrap', marginBottom: '.75rem', position: 'relative' }}>
           {course.category && (
             <span style={{ fontSize: '.68rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--eden)' }}>{course.category}</span>
           )}
@@ -60,29 +61,29 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
             <span style={{ fontSize: '.68rem', fontWeight: 600, background: 'rgba(255,255,255,.06)', color: levelColor, padding: '.3rem .7rem', borderRadius: 20, textTransform: 'capitalize' }}>{course.level}</span>
           )}
         </div>
-        <h1 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--text-hi)', letterSpacing: '-.02em', marginBottom: '.75rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--text-hi)', letterSpacing: '-.02em', marginBottom: '.75rem', position: 'relative' }}>
           {course.title}
         </h1>
         {course.description && (
-          <p style={{ color: 'var(--text-md)', fontSize: '.92rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>{course.description}</p>
+          <p style={{ color: 'var(--text-md)', fontSize: '.92rem', lineHeight: 1.7, marginBottom: '1.25rem', position: 'relative' }}>{course.description}</p>
         )}
-        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', fontSize: '.82rem', color: 'var(--text-lo)', marginBottom: enrolled ? '1.25rem' : '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', fontSize: '.82rem', color: 'var(--text-lo)', marginBottom: enrolled ? '1.25rem' : '1.5rem', position: 'relative' }}>
           {lessons.length > 0 && <span>{lessons.length} lessons</span>}
           {course.duration_minutes && <span>{Math.round(course.duration_minutes / 60)}h {course.duration_minutes % 60}m</span>}
         </div>
 
         {enrolled ? (
-          <div>
+          <div style={{ position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.5rem' }}>
               <span style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text-md)' }}>Your progress</span>
               <span style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--eden)' }}>{completedCount}/{lessons.length} · {progressPct}%</span>
             </div>
             <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${progressPct}%`, background: 'var(--eden)', borderRadius: 4, transition: 'width .3s' }} />
+              <div style={{ height: '100%', width: `${progressPct}%`, background: 'linear-gradient(90deg, var(--eden), var(--eden-glow))', borderRadius: 4, transition: 'width .3s' }} />
             </div>
           </div>
         ) : (
-          <EnrollButton courseId={course.id} />
+          <div style={{ position: 'relative' }}><EnrollButton courseId={course.id} /></div>
         )}
       </div>
 

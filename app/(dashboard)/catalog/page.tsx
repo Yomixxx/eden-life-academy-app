@@ -8,17 +8,39 @@ const levelColors: Record<string, string> = {
   advanced: '#fca5a5',
 }
 
+const CATEGORY_PALETTE = ['#5ec957', '#a78bfa', '#60a5fa', '#f97316', '#fbbf24', '#ec4899']
+
+function categoryColor(category: string | null | undefined): string {
+  if (!category) return CATEGORY_PALETTE[0]
+  let hash = 0
+  for (let i = 0; i < category.length; i++) hash = (hash * 31 + category.charCodeAt(i)) >>> 0
+  return CATEGORY_PALETTE[hash % CATEGORY_PALETTE.length]
+}
+
 function CourseCard({ course, enrollCount }: { course: Course; enrollCount: number }) {
   const levelColor = levelColors[course.level?.toLowerCase() ?? ''] ?? 'var(--text-lo)'
+  const accent = categoryColor(course.category)
   return (
-    <a href={`/catalog/${course.id}`} style={{
+    <a href={`/catalog/${course.id}`} className="course-card" style={{
       background: 'var(--bg-2)', border: '1px solid var(--border)',
-      borderRadius: 14, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '.5rem',
+      borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column',
       textDecoration: 'none', color: 'inherit',
+      boxShadow: '0 16px 34px -26px rgba(0,0,0,.7)',
+      transition: 'transform .18s, box-shadow .18s, border-color .18s',
     }}>
+      <div style={{
+        height: 64, flexShrink: 0, position: 'relative', overflow: 'hidden',
+        background: `linear-gradient(135deg, ${accent}33, ${accent}0d)`,
+        borderBottom: `1px solid ${accent}30`,
+      }}>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: 14, top: 14, opacity: 0.55 }}>
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </div>
+      <div style={{ padding: '1.25rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '.5rem', flex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.5rem' }}>
         {course.category && (
-          <span style={{ fontSize: '.68rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--eden)' }}>{course.category}</span>
+          <span style={{ fontSize: '.68rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: accent }}>{course.category}</span>
         )}
         {enrollCount > 0 && (
           <span style={{ fontSize: '.68rem', color: 'var(--text-lo)', whiteSpace: 'nowrap' }}>
@@ -63,6 +85,7 @@ function CourseCard({ course, enrollCount }: { course: Course; enrollCount: numb
       }}>
         View Course
       </span>
+      </div>
     </a>
   )
 }
@@ -144,6 +167,7 @@ export default async function CatalogPage() {
       <style>{`
         .enroll-btn { transition: background .2s; }
         .enroll-btn:hover { background: rgba(94,201,87,.2) !important; }
+        .course-card:hover { transform: translateY(-3px); box-shadow: 0 26px 50px -26px rgba(0,0,0,.8) !important; border-color: var(--border-hi) !important; }
       `}</style>
     </div>
   )
