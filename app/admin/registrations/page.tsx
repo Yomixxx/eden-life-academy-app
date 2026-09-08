@@ -1,9 +1,20 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { ACADEMY_LEVELS } from '@/lib/academy'
 
 const ACCENT = '#f97316'
+
+function monthKey(iso: string | null): string {
+  if (!iso) return ''
+  return iso.slice(0, 7) // YYYY-MM
+}
+
+function monthLabel(key: string): string {
+  const [year, month] = key.split('-').map(Number)
+  return new Date(year, month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}
 
 interface Registration {
   id: string
@@ -24,6 +35,8 @@ export default function AdminRegistrations() {
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [levelFilter, setLevelFilter] = useState('')
+  const [monthFilter, setMonthFilter] = useState('')
   const supabase = createClient()
 
   const load = useCallback(async () => {
@@ -37,7 +50,14 @@ export default function AdminRegistrations() {
 
   useEffect(() => { load() }, [load])
 
+  const monthOptions = useMemo(() => {
+    const keys = new Set(registrations.map(r => monthKey(r.enrolled_at)).filter(Boolean))
+    return Array.from(keys).sort().reverse()
+  }, [registrations])
+
   const filtered = registrations.filter(r => {
+    if (levelFilter && r.academy_level !== levelFilter) return false
+    if (monthFilter && monthKey(r.enrolled_at) !== monthFilter) return false
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -92,7 +112,11 @@ export default function AdminRegistrations() {
         <div>
           <div style={{ fontSize: '.68rem', fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase', color: ACCENT, marginBottom: '.35rem' }}>Admin</div>
           <h1 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: '1.6rem', color: 'var(--text-hi)', margin: 0 }}>Registrations</h1>
-          {!loading && <p style={{ color: 'var(--text-lo)', fontSize: '.88rem', marginTop: '.35rem' }}>{registrations.length} registered</p>}
+          {!loading && (
+            <p style={{ color: 'var(--text-lo)', fontSize: '.88rem', marginTop: '.35rem' }}>
+              {search || levelFilter || monthFilter ? `${filtered.length} of ${registrations.length} registered` : `${registrations.length} registered`}
+            </p>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
           <input
@@ -101,6 +125,22 @@ export default function AdminRegistrations() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+          <select
+            style={{ ...inputStyle, cursor: 'pointer' }}
+            value={levelFilter}
+            onChange={e => setLevelFilter(e.target.value)}
+          >
+            <option value="">All levels</option>
+            {ACADEMY_LEVELS.map(l => <option key={l} value={l}>{l} Level</option>)}
+          </select>
+          <select
+            style={{ ...inputStyle, cursor: 'pointer' }}
+            value={monthFilter}
+            onChange={e => setMonthFilter(e.target.value)}
+          >
+            <option value="">All time</option>
+            {monthOptions.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          </select>
           <button
             onClick={exportCsv}
             disabled={!filtered.length}
@@ -122,7 +162,7 @@ export default function AdminRegistrations() {
         <div style={{ color: 'var(--text-lo)', fontSize: '.9rem', padding: '2rem 0' }}>Loading registrations…</div>
       ) : filtered.length === 0 ? (
         <div style={{ background: 'var(--bg-1)', border: '1px dashed var(--border)', borderRadius: 14, padding: '3rem', textAlign: 'center', color: 'var(--text-lo)' }}>
-          {search ? 'No registrations match your search.' : 'No one has registered yet.'}
+          {search || levelFilter || monthFilter ? 'No registrations match your filters.' : 'No one has registered yet.'}
         </div>
       ) : (
         <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
