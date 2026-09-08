@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import EnrollButton from '@/components/EnrollButton'
 import LessonItem from '@/components/LessonItem'
+import LiveClassCard from '@/components/LiveClassCard'
+import { CURRENT_COHORT_COURSE_ID } from '@/lib/academy'
 
 const levelColors: Record<string, string> = {
   beginner: '#86efac',
@@ -28,6 +30,13 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const lessons = lessonsRes.data ?? []
   const enrolled = !!enrollmentRes.data
   const locked = !enrolled || course.is_locked
+  const academyLevel = enrollmentRes.data?.academy_level as string | null | undefined
+
+  let classLink = null
+  if (enrolled && course.id === CURRENT_COHORT_COURSE_ID && academyLevel) {
+    const { data } = await supabase.from('class_links').select('*').eq('level', academyLevel).maybeSingle()
+    classLink = data
+  }
   const completedIds = new Set((progressRes.data ?? []).filter(p => p.completed).map(p => p.lesson_id))
   const completedCount = lessons.filter(l => completedIds.has(l.id)).length
   const progressPct = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0
@@ -76,6 +85,8 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
           <EnrollButton courseId={course.id} />
         )}
       </div>
+
+      {academyLevel && <LiveClassCard level={academyLevel} initial={classLink} />}
 
       {enrolled && course.is_locked && (
         <div style={{
