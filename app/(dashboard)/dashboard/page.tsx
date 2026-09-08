@@ -62,12 +62,13 @@ export default async function DashboardPage() {
       )}
       <LiveBanner />
       {/* Welcome */}
-      <div style={{ marginBottom: '2rem' }}>
-        <p style={{ fontSize: '.8rem', fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--eden)', marginBottom: '.4rem' }}>Welcome back</p>
-        <h1 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem,3vw,2.2rem)', color: 'var(--text-hi)', letterSpacing: '-.02em' }}>
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '1.75rem 2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(94,201,87,.07), transparent 60%)' }}>
+        <div style={{ position: 'absolute', top: -60, right: -40, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(52,211,153,.14), transparent 70%)', pointerEvents: 'none' }} />
+        <p style={{ fontSize: '.8rem', fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--eden)', marginBottom: '.4rem', position: 'relative' }}>Welcome back</p>
+        <h1 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem,3vw,2.2rem)', color: 'var(--text-hi)', letterSpacing: '-.02em', position: 'relative' }}>
           Good to see you, {firstName}
         </h1>
-        <p style={{ marginTop: '.5rem', color: 'var(--text-lo)', fontSize: '.9rem' }}>
+        <p style={{ marginTop: '.5rem', color: 'var(--text-lo)', fontSize: '.9rem', position: 'relative' }}>
           {enrolledCount > 0 ? 'Continue your discipleship journey where you left off.' : 'Begin your discipleship journey today.'}
         </p>
       </div>
@@ -82,8 +83,14 @@ export default async function DashboardPage() {
           <div key={stat.label} style={{
             background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14,
             padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem',
+            boxShadow: '0 12px 30px -18px rgba(0,0,0,.6)',
           }}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(94,201,87,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+              background: 'linear-gradient(135deg, rgba(94,201,87,.22), rgba(52,211,153,.1))',
+              border: '1px solid rgba(94,201,87,.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
               {stat.icon}
             </div>
             <div>
@@ -145,12 +152,12 @@ export default async function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }} className="dash-grid">
 
         {/* Continue Learning */}
-        <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem' }}>
+        <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem', boxShadow: '0 16px 40px -24px rgba(0,0,0,.65)' }}>
           <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1rem', color: 'var(--text-hi)', marginBottom: '1.25rem' }}>Continue Learning</h2>
           {enrolledCount > 0 ? (
             <div style={{ background: 'var(--bg-3)', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ height: 6, background: 'var(--border)' }}>
-                <div style={{ height: '100%', width: '10%', background: 'var(--eden)', borderRadius: 3 }} />
+                <div style={{ height: '100%', width: '10%', background: 'linear-gradient(90deg, var(--eden), var(--eden-glow))', borderRadius: 3 }} />
               </div>
               <div style={{ padding: '1rem 1.25rem' }}>
                 <span style={{ fontSize: '.68rem', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--eden)' }}>
@@ -186,7 +193,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Live Sessions */}
-        <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem' }}>
+        <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem', boxShadow: '0 16px 40px -24px rgba(0,0,0,.65)' }}>
           <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1rem', color: 'var(--text-hi)', marginBottom: '1.25rem' }}>Upcoming Services</h2>
           {[
             { day: 'Sunday', time: '10:00 AM', campus: 'Mainland - Ogudu', type: 'Main Service' },
@@ -212,20 +219,28 @@ export default async function DashboardPage() {
         <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1rem', color: 'var(--text-hi)', marginBottom: '1rem' }}>Quick Access</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))', gap: '.75rem' }}>
           {[
-            { label: 'Daily Word', href: '/devotion', color: '#5ec957' },
-            { label: 'Sermons', href: '/sermons', color: '#a78bfa' },
-            { label: 'Bible', href: '/bible', color: '#60a5fa' },
-            { label: 'Community', href: '/community', color: '#f97316' },
-            { label: 'Announcements', href: '/announcements', color: '#fbbf24' },
-            { label: 'Ask PG', href: '/ask-pg', color: '#ec4899' },
+            { label: 'Daily Word', href: '/devotion', color: '#5ec957', icon: <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/> },
+            { label: 'Sermons', href: '/sermons', color: '#a78bfa', icon: <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></> },
+            { label: 'Bible', href: '/bible', color: '#60a5fa', icon: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></> },
+            { label: 'Community', href: '/community', color: '#f97316', icon: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></> },
+            { label: 'Announcements', href: '/announcements', color: '#fbbf24', icon: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></> },
+            { label: 'Ask PG', href: '/ask-pg', color: '#ec4899', icon: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/> },
           ].map(item => (
             <a key={item.href} href={item.href} className="qa-link" style={{
               '--qa-color': item.color,
               background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 12,
               padding: '1rem', textAlign: 'center', color: 'var(--text-md)',
               fontSize: '.85rem', fontWeight: 500,
-              textDecoration: 'none', display: 'block',
+              textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.6rem',
             } as React.CSSProperties}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                background: `linear-gradient(135deg, ${item.color}33, ${item.color}14)`,
+                border: `1px solid ${item.color}40`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
+              </div>
               {item.label}
             </a>
           ))}

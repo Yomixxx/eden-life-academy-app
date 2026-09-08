@@ -298,7 +298,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       fontWeight: active ? 600 : 400,
                       color: active ? 'var(--eden)' : 'var(--text-md)',
                       borderLeft: active ? '2px solid var(--eden)' : '2px solid transparent',
-                      background: active ? 'rgba(94,201,87,.07)' : 'transparent',
+                      background: active ? 'linear-gradient(90deg, rgba(94,201,87,.14), rgba(52,211,153,.03))' : 'transparent',
+                      boxShadow: active ? 'inset 0 0 0 1px rgba(94,201,87,.06)' : 'none',
                       transition: 'color .15s, background .15s, border-color .15s',
                       textDecoration: 'none',
                       cursor: 'pointer',
@@ -317,7 +318,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       }
                     }}
                   >
-                    <span style={{ opacity: active ? 1 : 0.6 }}>{item.icon}</span>
+                    <span style={{ opacity: active ? 1 : 0.6, filter: active ? 'drop-shadow(0 0 5px rgba(94,201,87,.55))' : 'none' }}>{item.icon}</span>
                     {item.label}
                   </a>
                 )
