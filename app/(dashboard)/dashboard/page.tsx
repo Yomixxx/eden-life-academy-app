@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   const today = new Date().toISOString().slice(0, 10)
   const [profileRes, enrollmentsRes, announcementRes, devotionRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('enrollments').select('course_id, last_activity_date, courses(id, title)').eq('user_id', user.id).order('last_activity_date', { ascending: false, nullsFirst: false }),
+    supabase.from('enrollments').select('course_id, last_activity_date, matric_number, academy_level, cohort, courses(id, title)').eq('user_id', user.id).order('last_activity_date', { ascending: false, nullsFirst: false }),
     supabase.from('announcements').select('*').eq('is_pinned', true).order('published_at', { ascending: false }).limit(1).single(),
     supabase.from('daily_devotions').select('scripture_reference, scripture_text, body').eq('date', today).maybeSingle(),
   ])
@@ -24,6 +24,7 @@ export default async function DashboardPage() {
   const todayDevotion = devotionRes.data
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Friend'
+  const academyEnrollment = enrollments.find(e => e.matric_number)
 
   // Find the most recently active course that's been started but not finished,
   // so we can nudge the user to pick it back up.
@@ -71,6 +72,22 @@ export default async function DashboardPage() {
         <p style={{ marginTop: '.5rem', color: 'var(--text-lo)', fontSize: '.9rem', position: 'relative' }}>
           {enrolledCount > 0 ? 'Continue your discipleship journey where you left off.' : 'Begin your discipleship journey today.'}
         </p>
+        {academyEnrollment && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '.5rem', marginTop: '1rem', position: 'relative',
+            background: 'rgba(94,201,87,.1)', border: '1px solid rgba(94,201,87,.3)',
+            borderRadius: 10, padding: '.55rem .9rem',
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--eden)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 14h4"/>
+            </svg>
+            <span style={{ fontSize: '.72rem', color: 'var(--text-lo)' }}>Matric No.</span>
+            <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--eden)', fontFamily: 'monospace' }}>{academyEnrollment.matric_number}</span>
+            {academyEnrollment.academy_level && (
+              <span style={{ fontSize: '.72rem', color: 'var(--text-lo)', paddingLeft: '.4rem', borderLeft: '1px solid var(--border-hi)' }}>{academyEnrollment.academy_level} Level</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Stats row */}
