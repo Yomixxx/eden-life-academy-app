@@ -37,6 +37,7 @@ export default function AdminRegistrations() {
   const [search, setSearch] = useState('')
   const [levelFilter, setLevelFilter] = useState('')
   const [monthFilter, setMonthFilter] = useState('')
+  const [cohortFilter, setCohortFilter] = useState('')
   const supabase = createClient()
 
   const load = useCallback(async () => {
@@ -55,9 +56,15 @@ export default function AdminRegistrations() {
     return Array.from(keys).sort().reverse()
   }, [registrations])
 
+  const cohortOptions = useMemo(() => {
+    const values = new Set(registrations.map(r => r.cohort).filter((c): c is string => !!c))
+    return Array.from(values).sort()
+  }, [registrations])
+
   const filtered = registrations.filter(r => {
     if (levelFilter && r.academy_level !== levelFilter) return false
     if (monthFilter && monthKey(r.enrolled_at) !== monthFilter) return false
+    if (cohortFilter && r.cohort !== cohortFilter) return false
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -114,7 +121,7 @@ export default function AdminRegistrations() {
           <h1 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: '1.6rem', color: 'var(--text-hi)', margin: 0 }}>Registrations</h1>
           {!loading && (
             <p style={{ color: 'var(--text-lo)', fontSize: '.88rem', marginTop: '.35rem' }}>
-              {search || levelFilter || monthFilter ? `${filtered.length} of ${registrations.length} registered` : `${registrations.length} registered`}
+              {search || levelFilter || monthFilter || cohortFilter ? `${filtered.length} of ${registrations.length} registered` : `${registrations.length} registered`}
             </p>
           )}
         </div>
@@ -141,6 +148,14 @@ export default function AdminRegistrations() {
             <option value="">All time</option>
             {monthOptions.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
           </select>
+          <select
+            style={{ ...inputStyle, cursor: 'pointer' }}
+            value={cohortFilter}
+            onChange={e => setCohortFilter(e.target.value)}
+          >
+            <option value="">All cohorts</option>
+            {cohortOptions.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
           <button
             onClick={exportCsv}
             disabled={!filtered.length}
@@ -162,7 +177,7 @@ export default function AdminRegistrations() {
         <div style={{ color: 'var(--text-lo)', fontSize: '.9rem', padding: '2rem 0' }}>Loading registrations…</div>
       ) : filtered.length === 0 ? (
         <div style={{ background: 'var(--bg-1)', border: '1px dashed var(--border)', borderRadius: 14, padding: '3rem', textAlign: 'center', color: 'var(--text-lo)' }}>
-          {search || levelFilter || monthFilter ? 'No registrations match your filters.' : 'No one has registered yet.'}
+          {search || levelFilter || monthFilter || cohortFilter ? 'No registrations match your filters.' : 'No one has registered yet.'}
         </div>
       ) : (
         <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
