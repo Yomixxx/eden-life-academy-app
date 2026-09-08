@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { enrollInGrowthSteps } from '@/lib/onboarding'
+import { ACADEMY_LEVELS } from '@/lib/academy'
 import Image from 'next/image'
 
 const CAMPUSES = [
@@ -15,6 +16,8 @@ const CAMPUSES = [
 export default function SetupCampusPage() {
   const router = useRouter()
   const [selected, setSelected] = useState('')
+  const [enrollChoice, setEnrollChoice] = useState<'enroll' | 'explore' | ''>('')
+  const [academyLevel, setAcademyLevel] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [nextPath, setNextPath] = useState<string | null>(null)
@@ -24,9 +27,23 @@ export default function SetupCampusPage() {
     setNextPath(new URLSearchParams(window.location.search).get('next'))
   }, [])
 
+  // This is where Google sign-in lands every new member — it never
+  // supplies a campus, so unlike email/password signup (which asks
+  // during account creation), this is the first and only chance to ask
+  // whether they're enrolling before dropping them into the app.
+  const forcedAcademyRegistration = nextPath === '/register'
+  const isAcademyRegistration = forcedAcademyRegistration || enrollChoice === 'enroll'
+  const canSubmit = !!selected
+    && (forcedAcademyRegistration || !!enrollChoice)
+    && (!isAcademyRegistration || !!academyLevel)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selected) return
+    if (!forcedAcademyRegistration && !enrollChoice) {
+      setError('Please let us know if you\'d like to enroll in the Academy now or just explore first.')
+      return
+    }
     setLoading(true)
     setError('')
     const { data: { user } } = await supabase.auth.getUser()
@@ -46,6 +63,14 @@ export default function SetupCampusPage() {
     // Send the branded welcome email (non-blocking) — recipient and name are
     // derived server-side from the session, not from this request body.
     fetch('/api/welcome', { method: 'POST' }).catch(() => {})
+
+    if (isAcademyRegistration) {
+      // /register reads the chosen level from auth metadata, same as the
+      // email/password signup path — stash it there before handing off.
+      await supabase.auth.updateUser({ data: { academy_level: academyLevel } })
+      router.replace('/register')
+      return
+    }
 
     router.replace(nextPath ?? '/onboarding')
   }
@@ -101,14 +126,74 @@ export default function SetupCampusPage() {
             ))}
           </div>
 
-          <button type="submit" disabled={!selected || loading} style={{
+          {!forcedAcademyRegistration && (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <label style={{ display: 'block', fontSize: '.72rem', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-lo)', marginBottom: '.6rem' }}>
+                Would you like to enroll in EdenLife Academy now?
+              </label>
+              <div style={{ display: 'flex', gap: '.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setEnrollChoice('enroll')}
+                  style={{
+                    flex: 1, padding: '.85rem', borderRadius: 10, cursor: 'pointer',
+                    border: `1px solid ${enrollChoice === 'enroll' ? 'var(--eden)' : 'var(--border)'}`,
+                    background: enrollChoice === 'enroll' ? 'rgba(94,201,87,.12)' : 'var(--bg-2)',
+                    color: enrollChoice === 'enroll' ? 'var(--eden)' : 'var(--text-md)',
+                    fontWeight: 600, fontSize: '.85rem',
+                  }}
+                >
+                  Yes, enroll me
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEnrollChoice('explore')}
+                  style={{
+                    flex: 1, padding: '.85rem', borderRadius: 10, cursor: 'pointer',
+                    border: `1px solid ${enrollChoice === 'explore' ? 'var(--eden)' : 'var(--border)'}`,
+                    background: enrollChoice === 'explore' ? 'rgba(94,201,87,.12)' : 'var(--bg-2)',
+                    color: enrollChoice === 'explore' ? 'var(--eden)' : 'var(--text-md)',
+                    fontWeight: 600, fontSize: '.85rem',
+                  }}
+                >
+                  Just exploring for now
+                </button>
+              </div>
+              <p style={{ marginTop: '.5rem', fontSize: '.78rem', color: 'var(--text-lo)' }}>
+                Course content stays locked until you enroll — you can always do that later from the course catalog.
+              </p>
+            </div>
+          )}
+
+          {isAcademyRegistration && (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <label style={{ display: 'block', fontSize: '.72rem', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-lo)', marginBottom: '.6rem' }}>
+                Which level are you enrolling for?
+              </label>
+              <select
+                value={academyLevel}
+                onChange={e => setAcademyLevel(e.target.value)}
+                required
+                style={{
+                  width: '100%', boxSizing: 'border-box', appearance: 'none', cursor: 'pointer',
+                  background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10,
+                  padding: '.95rem 1rem', color: 'var(--text-hi)', fontSize: '.95rem',
+                }}
+              >
+                <option value="" disabled>Select your level</option>
+                {ACADEMY_LEVELS.map(l => <option key={l} value={l}>{l} Level</option>)}
+              </select>
+            </div>
+          )}
+
+          <button type="submit" disabled={!canSubmit || loading} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
             width: '100%', border: 'none', borderRadius: 10,
-            background: !selected || loading ? 'var(--bg-3)' : 'var(--eden)',
-            color: !selected || loading ? 'var(--text-lo)' : 'var(--bg-0)',
+            background: !canSubmit || loading ? 'var(--bg-3)' : 'var(--eden)',
+            color: !canSubmit || loading ? 'var(--text-lo)' : 'var(--bg-0)',
             fontWeight: 600, fontSize: '.95rem', padding: '1rem',
-            cursor: !selected || loading ? 'not-allowed' : 'pointer',
-            transition: 'background .2s', boxShadow: selected ? '0 8px 26px rgba(94,201,87,.28)' : 'none',
+            cursor: !canSubmit || loading ? 'not-allowed' : 'pointer',
+            transition: 'background .2s', boxShadow: canSubmit ? '0 8px 26px rgba(94,201,87,.28)' : 'none',
           }}>
             {loading ? 'Saving…' : 'Continue to Dashboard'}
             {!loading && (
