@@ -32,6 +32,7 @@ interface BibleVerse { book_name: string; chapter: number; verse: number; text: 
 export default function BiblePage() {
   const [selectedBook, setSelectedBook] = useState<string | null>(null)
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null)
+  const [selectedVerse, setSelectedVerse] = useState<number | null>(null)
   const [verses, setVerses] = useState<BibleVerse[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -48,6 +49,7 @@ export default function BiblePage() {
     setLoading(true)
     setError('')
     setVerses([])
+    setSelectedVerse(null)
     const query = `${encodeURIComponent(book.toLowerCase().replace(/ /g, '+'))}+${chapter}`
     try {
       const res = await fetch(`https://bible-api.com/${query}?translation=${translation}`)
@@ -64,6 +66,11 @@ export default function BiblePage() {
   useEffect(() => {
     if (selectedBook && selectedChapter) fetchChapter(selectedBook, selectedChapter)
   }, [selectedBook, selectedChapter, fetchChapter])
+
+  useEffect(() => {
+    if (selectedVerse == null) return
+    document.getElementById(`bible-verse-${selectedVerse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [selectedVerse])
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -224,12 +231,37 @@ export default function BiblePage() {
             )}
             {selectedBook && !loading && !error && verses.length > 0 && (
               <div>
-                <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-hi)', marginBottom: '1.25rem' }}>
-                  {selectedBook} {selectedChapter}
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '.75rem', marginBottom: '1.25rem' }}>
+                  <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-hi)', margin: 0 }}>
+                    {selectedBook} {selectedChapter}
+                  </h2>
+                  <select
+                    value={selectedVerse ?? ''}
+                    onChange={e => setSelectedVerse(e.target.value ? Number(e.target.value) : null)}
+                    style={{
+                      minHeight: 40, boxSizing: 'border-box',
+                      background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8,
+                      color: selectedVerse ? 'var(--text-hi)' : 'var(--text-lo)', padding: '.5rem .75rem',
+                      fontSize: '.85rem', cursor: 'pointer', fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+                    }}
+                  >
+                    <option value="">Jump to verse…</option>
+                    {verses.map(v => <option key={v.verse} value={v.verse}>Verse {v.verse}</option>)}
+                  </select>
+                </div>
                 <div style={{ lineHeight: 2, fontSize: '1rem', color: 'var(--text-md)' }}>
                   {verses.map(v => (
-                    <span key={v.verse}>
+                    <span
+                      key={v.verse}
+                      id={`bible-verse-${v.verse}`}
+                      onClick={() => setSelectedVerse(cur => cur === v.verse ? null : v.verse)}
+                      style={{
+                        cursor: 'pointer', borderRadius: 5,
+                        background: selectedVerse === v.verse ? 'rgba(94,201,87,.18)' : 'transparent',
+                        boxShadow: selectedVerse === v.verse ? '0 0 0 3px rgba(94,201,87,.18)' : 'none',
+                        transition: 'background .15s, box-shadow .15s',
+                      }}
+                    >
                       <sup style={{ fontSize: '.68rem', color: 'var(--eden)', fontWeight: 700, marginRight: '.2rem', userSelect: 'none' }}>{v.verse}</sup>
                       {v.text.trim()}{' '}
                     </span>
