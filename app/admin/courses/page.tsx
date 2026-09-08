@@ -280,11 +280,11 @@ export default function AdminCourses() {
   const labelStyle = { fontSize: '.78rem', fontWeight: 600, color: 'var(--text-md)', marginBottom: '.3rem', display: 'block' as const }
 
   const btnPrimary = {
-    background: ACCENT, color: '#fff', border: 'none',
+    background: 'linear-gradient(135deg, #f97316, #fbbf24)', color: '#1a0f02', border: 'none',
     borderRadius: 8, padding: '.65rem 1.25rem',
-    fontSize: '.88rem', fontWeight: 600, cursor: 'pointer',
+    fontSize: '.88rem', fontWeight: 700, cursor: 'pointer',
     fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-    transition: 'opacity .15s',
+    transition: 'opacity .15s', boxShadow: '0 8px 20px -6px rgba(249,115,22,.45)',
   }
 
   const btnSecondary = {
@@ -336,7 +336,7 @@ export default function AdminCourses() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
           {courses.map(course => (
-            <div key={course.id} style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+            <div key={course.id} className="course-row" style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 14px 32px -26px rgba(0,0,0,.7)', transition: 'box-shadow .18s, border-color .18s' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => toggleExpand(course.id)}
@@ -688,11 +688,15 @@ export default function AdminCourses() {
             <p style={{ color: 'var(--text-lo)', fontSize: '.9rem', margin: '0 0 1.5rem' }}>This will permanently delete the course and all its lessons. This cannot be undone.</p>
             <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'flex-end' }}>
               <button style={btnSecondary} onClick={() => setDeleteConfirm(null)}>Cancel</button>
-              <button style={{ ...btnPrimary, background: '#ef4444' }} onClick={() => deleteCourse(deleteConfirm)}>Delete</button>
+              <button style={{ ...btnPrimary, background: '#ef4444', color: '#fff', boxShadow: 'none' }} onClick={() => deleteCourse(deleteConfirm)}>Delete</button>
             </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        .course-row:hover { border-color: var(--border-hi) !important; box-shadow: 0 22px 44px -26px rgba(0,0,0,.85) !important; }
+      `}</style>
     </div>
   )
 }

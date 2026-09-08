@@ -192,7 +192,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   fontWeight: active ? 600 : 400,
                   color: active ? ACCENT : 'var(--text-md)',
                   borderLeft: `2px solid ${active ? ACCENT : 'transparent'}`,
-                  background: active ? 'rgba(249,115,22,.08)' : 'transparent',
+                  background: active ? 'linear-gradient(90deg, rgba(249,115,22,.14), rgba(251,191,36,.03))' : 'transparent',
+                  boxShadow: active ? 'inset 0 0 0 1px rgba(249,115,22,.06)' : 'none',
                   transition: 'color .15s, background .15s, border-color .15s',
                   textDecoration: 'none',
                   cursor: 'pointer',
@@ -210,7 +211,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   }
                 }}
               >
-                <span style={{ opacity: active ? 1 : 0.6 }}>{item.icon}</span>
+                <span style={{ opacity: active ? 1 : 0.6, filter: active ? 'drop-shadow(0 0 5px rgba(249,115,22,.55))' : 'none' }}>{item.icon}</span>
                 {item.label}
                 {item.href === '/admin/pastoral-care' && openAlerts > 0 && (
                   <span style={{
