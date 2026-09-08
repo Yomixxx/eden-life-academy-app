@@ -134,13 +134,14 @@ export default function BiblePage() {
       {/* Search Tab */}
       {activeTab === 'search' && (
         <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '.75rem', marginBottom: '1.25rem' }}>
+          <form onSubmit={handleSearch} style={{ display: 'flex', flexWrap: 'wrap', gap: '.75rem', marginBottom: '1.25rem' }}>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder='e.g. "John 3:16" or "Psalm 23" or "Romans 8:28-30"'
               style={{
-                flex: 1, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8,
+                flex: '1 1 200px', minWidth: 0, minHeight: 44, boxSizing: 'border-box',
+                background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8,
                 padding: '.75rem 1rem', color: 'var(--text-hi)', fontSize: '.9rem',
                 fontFamily: 'var(--font-poppins), Poppins, sans-serif',
               }}
@@ -149,7 +150,7 @@ export default function BiblePage() {
             />
             <button type="submit" disabled={searchLoading} style={{
               background: 'var(--eden)', color: 'var(--bg-0)', border: 'none', borderRadius: 8,
-              padding: '.75rem 1.25rem', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer',
+              padding: '.75rem 1.25rem', minHeight: 44, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer',
               fontFamily: 'var(--font-poppins), Poppins, sans-serif', whiteSpace: 'nowrap',
             }}>{searchLoading ? 'Looking up…' : 'Look Up'}</button>
           </form>
@@ -165,102 +166,91 @@ export default function BiblePage() {
 
       {/* Reader Tab */}
       {activeTab === 'reader' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '1.25rem', alignItems: 'start' }} className="bible-reader-grid">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-          {/* Book selector */}
-          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', maxHeight: 520, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '.9rem 1.1rem', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '.85rem', color: 'var(--text-hi)' }}>Books</div>
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              {[{ label: 'Old Testament', books: OT }, { label: 'New Testament', books: NT }].map(section => (
-                <div key={section.label}>
-                  <div style={{ padding: '.5rem 1.1rem .3rem', fontSize: '.62rem', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-lo)' }}>{section.label}</div>
-                  {section.books.map(book => (
-                    <button key={book} onClick={() => { setSelectedBook(book); setSelectedChapter(1) }} style={{
-                      display: 'block', width: '100%', textAlign: 'left',
-                      padding: '.6rem 1.1rem', border: 'none', cursor: 'pointer',
-                      fontSize: '.85rem', fontWeight: selectedBook === book ? 600 : 400,
-                      background: selectedBook === book ? 'rgba(94,201,87,.1)' : 'transparent',
-                      color: selectedBook === book ? 'var(--eden)' : 'var(--text-md)',
-                      borderLeft: selectedBook === book ? '2px solid var(--eden)' : '2px solid transparent',
-                      fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-                      transition: 'background .12s, color .12s',
-                      minHeight: 40,
-                    }}
-                      onMouseEnter={e => { if (selectedBook !== book) { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; e.currentTarget.style.color = 'var(--text-hi)' } }}
-                      onMouseLeave={e => { if (selectedBook !== book) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-md)' } }}
-                    >{book}</button>
-                  ))}
-                </div>
+          {/* Book + Chapter pickers */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.75rem' }}>
+            <select
+              value={selectedBook ?? ''}
+              onChange={e => { const book = e.target.value; setSelectedBook(book || null); setSelectedChapter(book ? 1 : null) }}
+              style={{
+                flex: '1 1 220px', minWidth: 0, minHeight: 48, boxSizing: 'border-box',
+                background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10,
+                color: selectedBook ? 'var(--text-hi)' : 'var(--text-lo)', padding: '.85rem 1rem',
+                fontSize: '.9rem', cursor: 'pointer', fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+              }}
+            >
+              <option value="" disabled>Select a book</option>
+              <optgroup label="Old Testament">
+                {OT.map(book => <option key={book} value={book}>{book}</option>)}
+              </optgroup>
+              <optgroup label="New Testament">
+                {NT.map(book => <option key={book} value={book}>{book}</option>)}
+              </optgroup>
+            </select>
+            <select
+              value={selectedChapter ?? ''}
+              onChange={e => setSelectedChapter(Number(e.target.value))}
+              disabled={!selectedBook}
+              style={{
+                flex: '1 1 140px', minWidth: 0, minHeight: 48, boxSizing: 'border-box',
+                background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10,
+                color: selectedChapter ? 'var(--text-hi)' : 'var(--text-lo)', padding: '.85rem 1rem',
+                fontSize: '.9rem', cursor: selectedBook ? 'pointer' : 'not-allowed',
+                opacity: selectedBook ? 1 : 0.6, fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+              }}
+            >
+              <option value="" disabled>Chapter</option>
+              {Array.from({ length: chapterCount }, (_, i) => i + 1).map(ch => (
+                <option key={ch} value={ch}>Chapter {ch}</option>
               ))}
-            </div>
+            </select>
           </div>
 
-          {/* Chapter + content */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {selectedBook && (
-              <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem 1.25rem' }}>
-                <p style={{ fontSize: '.72rem', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-lo)', marginBottom: '.6rem' }}>{selectedBook} — Chapter</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.35rem' }}>
-                  {Array.from({ length: chapterCount }, (_, i) => i + 1).map(ch => (
-                    <button key={ch} onClick={() => setSelectedChapter(ch)} style={{
-                      width: 44, height: 44, borderRadius: 7, border: '1px solid',
-                      borderColor: selectedChapter === ch ? 'var(--eden)' : 'var(--border)',
-                      background: selectedChapter === ch ? 'var(--eden)' : 'var(--bg-3)',
-                      color: selectedChapter === ch ? 'var(--bg-0)' : 'var(--text-md)',
-                      fontSize: '.78rem', fontWeight: 600, cursor: 'pointer',
-                      fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-                    }}>{ch}</button>
+          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem', minHeight: 300 }}>
+            {!selectedBook && (
+              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-lo)' }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto .75rem', opacity: .4, display: 'block' }}>
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+                <p style={{ fontSize: '.9rem' }}>Select a book to start reading</p>
+              </div>
+            )}
+            {selectedBook && loading && (
+              <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-lo)', fontSize: '.9rem' }}>Loading…</div>
+            )}
+            {selectedBook && !loading && error && (
+              <p style={{ color: '#fca5a5', fontSize: '.88rem' }}>{error}</p>
+            )}
+            {selectedBook && !loading && !error && verses.length > 0 && (
+              <div>
+                <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-hi)', marginBottom: '1.25rem' }}>
+                  {selectedBook} {selectedChapter}
+                </h2>
+                <div style={{ lineHeight: 2, fontSize: '1rem', color: 'var(--text-md)' }}>
+                  {verses.map(v => (
+                    <span key={v.verse}>
+                      <sup style={{ fontSize: '.68rem', color: 'var(--eden)', fontWeight: 700, marginRight: '.2rem', userSelect: 'none' }}>{v.verse}</sup>
+                      {v.text.trim()}{' '}
+                    </span>
                   ))}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginTop: '1.5rem' }}>
+                  {selectedChapter && selectedChapter > 1 && (
+                    <button onClick={() => setSelectedChapter(c => (c ?? 2) - 1)} style={{ flex: '1 1 auto', padding: '.7rem 1.25rem', minHeight: 44, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-md)', fontSize: '.85rem', cursor: 'pointer', fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>← Previous</button>
+                  )}
+                  {selectedChapter && selectedChapter < chapterCount && (
+                    <button onClick={() => setSelectedChapter(c => (c ?? 0) + 1)} style={{ flex: '1 1 auto', padding: '.7rem 1.25rem', minHeight: 44, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-md)', fontSize: '.85rem', cursor: 'pointer', fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>Next →</button>
+                  )}
                 </div>
               </div>
             )}
-
-            <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem', minHeight: 300 }}>
-              {!selectedBook && (
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-lo)' }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto .75rem', opacity: .4, display: 'block' }}>
-                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                  </svg>
-                  <p style={{ fontSize: '.9rem' }}>Select a book to start reading</p>
-                </div>
-              )}
-              {selectedBook && loading && (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-lo)', fontSize: '.9rem' }}>Loading…</div>
-              )}
-              {selectedBook && !loading && error && (
-                <p style={{ color: '#fca5a5', fontSize: '.88rem' }}>{error}</p>
-              )}
-              {selectedBook && !loading && !error && verses.length > 0 && (
-                <div>
-                  <h2 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-hi)', marginBottom: '1.25rem' }}>
-                    {selectedBook} {selectedChapter}
-                  </h2>
-                  <div style={{ lineHeight: 1.95, fontSize: '.93rem', color: 'var(--text-md)' }}>
-                    {verses.map(v => (
-                      <span key={v.verse}>
-                        <sup style={{ fontSize: '.65rem', color: 'var(--eden)', fontWeight: 700, marginRight: '.2rem', userSelect: 'none' }}>{v.verse}</sup>
-                        {v.text.trim()}{' '}
-                      </span>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: '.5rem', marginTop: '1.5rem' }}>
-                    {selectedChapter && selectedChapter > 1 && (
-                      <button onClick={() => setSelectedChapter(c => (c ?? 2) - 1)} style={{ padding: '.7rem 1.25rem', minHeight: 44, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-md)', fontSize: '.85rem', cursor: 'pointer', fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>← Previous</button>
-                    )}
-                    {selectedChapter && selectedChapter < chapterCount && (
-                      <button onClick={() => setSelectedChapter(c => (c ?? 0) + 1)} style={{ padding: '.7rem 1.25rem', minHeight: 44, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-md)', fontSize: '.85rem', cursor: 'pointer', fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>Next →</button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}
 
       <style>{`
         @media (max-width: 700px) {
-          .bible-reader-grid { grid-template-columns: 1fr !important; }
           .bible-tab-row { flex-direction: column !important; align-items: flex-start !important; }
         }
       `}</style>
