@@ -38,6 +38,15 @@ const navItems = [
     ),
   },
   {
+    label: 'Live Classes',
+    href: '/admin/live-classes',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+      </svg>
+    ),
+  },
+  {
     label: 'Sermons',
     href: '/admin/sermons',
     icon: (
