@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { announcementEmail } from '@/lib/email-templates'
@@ -21,10 +21,7 @@ export async function POST(req: Request) {
   const { title, body } = await req.json()
   if (!title || typeof title !== 'string') return NextResponse.json({ error: 'Missing "title"' }, { status: 400 })
 
-  const admin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const admin = createAdminClient()
 
   const { data: userList } = await admin.auth.admin.listUsers({ perPage: 1000 })
   const users = userList?.users ?? []

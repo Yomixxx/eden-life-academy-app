@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { devotionEmail } from '@/lib/email-templates'
+import { cleanEnv } from '@/lib/supabase/admin'
 
 // Runs daily at 6am UTC (7am Lagos, UTC+1)
 // Generates a devotional in PG's voice, stores it for in-app display on
@@ -23,7 +24,7 @@ interface Devotion {
 // upstream change, not something this app broke. Groq's free tier replaces
 // it: no credit card, no billing risk, verified working with a fresh key.
 async function generateDevotion(dateStr: string): Promise<Devotion> {
-  const groqKey = process.env.GROQ_API_KEY
+  const groqKey = cleanEnv(process.env.GROQ_API_KEY)
   if (!groqKey) throw new Error('GROQ_API_KEY is not configured')
 
   const prompt = `You are Senior Pastor Gbenga Ajibola of Eden Life Experience Centre, Lagos, Nigeria.
@@ -76,10 +77,8 @@ export async function GET(req: Request) {
   }
 
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    // Strip BOM (U+FEFF) that PowerShell pipe can prepend to env values
-    const rawKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim()
-    const supabaseKey = rawKey.charCodeAt(0) === 0xFEFF ? rawKey.slice(1) : rawKey
+    const supabaseUrl = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL)
+    const supabaseKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json({ error: 'Missing env vars', url: !!supabaseUrl, key: !!supabaseKey }, { status: 500 })
     }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { weeklyDigestEmail } from '@/lib/email-templates'
+import { cleanEnv } from '@/lib/supabase/admin'
 
 // Runs weekly on Fridays. Emails every member with an address on file a
 // roundup of sermons and announcements published in the last 7 days.
@@ -19,9 +20,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, skipped: 'Mailer not configured' })
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const rawKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim()
-  const supabaseKey = rawKey.charCodeAt(0) === 0xFEFF ? rawKey.slice(1) : rawKey
+  const supabaseUrl = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const supabaseKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.json({ error: 'Missing env vars' }, { status: 500 })
   }

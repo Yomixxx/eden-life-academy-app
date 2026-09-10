@@ -18,7 +18,11 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: 'Eden Life Academy',
-  description: 'Your discipleship journey, all in one place.',
+  description: 'Discipleship platform for Eden Life Experience Centre with courses, daily devotionals, sermons, Bible study, and certificates.',
+  openGraph: {
+    title: 'Eden Life Academy',
+    description: 'Discipleship platform for Eden Life Experience Centre with courses, daily devotionals, sermons, Bible study, and certificates.',
+  },
 }
 
 export default function RootLayout({

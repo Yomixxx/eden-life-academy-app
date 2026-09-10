@@ -1,6 +1,6 @@
 import { findAnswer, FALLBACK_ANSWER } from '@/lib/qa-answers'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { detectCrisis, crisisResponse } from '@/lib/crisis-detection'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { pastoralAlertEmail } from '@/lib/email-templates'
@@ -9,10 +9,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
 
 async function flagPastoralAlert(userId: string | null, category: string, message: string) {
   try {
-    const admin = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const admin = createAdminClient()
     await admin.from('pastoral_alerts').insert({ user_id: userId, source: 'ask_pg', category, message })
   } catch {
     // Logging the alert must never block the user from getting the crisis response.

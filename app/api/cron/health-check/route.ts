@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { sendPhoneAlert, isPhoneAlertConfigured } from '@/lib/health-alert'
+import { cleanEnv } from '@/lib/supabase/admin'
 
 // Runs every few hours. Unlike /api/health (a cheap uptime ping), this
 // exercises the EXACT same relay call the crisis-escalation path in
@@ -22,9 +23,8 @@ export async function GET(req: Request) {
 
   const failures: string[] = []
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const rawKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim()
-  const supabaseKey = rawKey.charCodeAt(0) === 0xFEFF ? rawKey.slice(1) : rawKey
+  const supabaseUrl = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const supabaseKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
   if (!supabaseUrl || !supabaseKey) {
     failures.push('Missing Supabase env vars')
   } else {

@@ -5,9 +5,10 @@
 // onboarding@resend.dev sender, which only delivers to the account's own
 // verified email address.
 import { Resend } from 'resend'
+import { cleanEnv } from '@/lib/supabase/admin'
 
-const API_KEY = process.env.RESEND_API_KEY
-const FROM = process.env.RESEND_FROM_EMAIL ?? 'Eden Life Academy <onboarding@resend.dev>'
+const API_KEY = cleanEnv(process.env.RESEND_API_KEY)
+const FROM = cleanEnv(process.env.RESEND_FROM_EMAIL) || 'Eden Life Academy <onboarding@resend.dev>'
 
 const resend = API_KEY ? new Resend(API_KEY) : null
 

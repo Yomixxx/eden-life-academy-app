@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isMailerConfigured } from '@/lib/mailer'
+import { cleanEnv } from '@/lib/supabase/admin'
 
 // Public, unauthenticated health check for external uptime monitors
 // (e.g. UptimeRobot / Better Stack) to poll. Deliberately cheap — just
@@ -10,9 +11,8 @@ import { isMailerConfigured } from '@/lib/mailer'
 // minutes) would flood the pastoral alert inbox.
 
 export async function GET() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const rawKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim()
-  const supabaseKey = rawKey.charCodeAt(0) === 0xFEFF ? rawKey.slice(1) : rawKey
+  const supabaseUrl = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const supabaseKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
 
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.json({ ok: false, error: 'Missing Supabase env vars' }, { status: 503 })

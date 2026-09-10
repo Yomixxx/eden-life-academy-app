@@ -1,5 +1,6 @@
 import { createServerClient, type CookieMethodsServer } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { cleanEnv } from '@/lib/supabase/admin'
 
 const PROTECTED = [
   '/dashboard', '/courses', '/catalog', '/certificates',
@@ -26,9 +27,12 @@ export async function proxy(request: NextRequest) {
     },
   }
 
+  const url = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL) || 'https://rpkxyuohbmbbzoqkulgn.supabase.co'
+  const key = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder'
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    key,
     { cookieEncoding: 'base64url', cookies: cookieMethods }
   )
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { registrationConfirmationEmail } from '@/lib/email-templates'
 import { CURRENT_COHORT_COURSE_ID, CURRENT_COHORT_COURSE_TITLE, CURRENT_COHORT_LABEL, ACADEMY_LEVELS } from '@/lib/academy'
@@ -30,48 +30,50 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Please select a level' }, { status: 400 })
   }
 
-  const admin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const admin = createAdminClient()
 
-  const { data: existing } = await admin
-    .from('enrollments')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('course_id', courseId)
-    .maybeSingle()
+  try {
+    const { data: existing } = await admin
+      .from('enrollments')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('course_id', courseId)
+      .maybeSingle()
 
-  const { data: enrollment, error } = await admin
-    .from('enrollments')
-    .upsert(
-      {
-        user_id: user.id,
-        course_id: courseId,
-        ...(isCohortCourse ? { academy_level: level, cohort: CURRENT_COHORT_LABEL } : {}),
-      },
-      { onConflict: 'user_id,course_id', ignoreDuplicates: false }
-    )
-    .select('matric_number')
-    .single()
+    const { data: enrollment, error } = await admin
+      .from('enrollments')
+      .upsert(
+        {
+          user_id: user.id,
+          course_id: courseId,
+          ...(isCohortCourse ? { academy_level: level, cohort: CURRENT_COHORT_LABEL } : {}),
+        },
+        { onConflict: 'user_id,course_id', ignoreDuplicates: false }
+      )
+      .select('matric_number')
+      .single()
 
-  if (error || !enrollment) {
-    return NextResponse.json({ error: error?.message ?? 'Enrollment failed' }, { status: 500 })
-  }
-
-  if (!existing && isCohortCourse && isMailerConfigured() && user.email) {
-    const { data: profile } = await admin.from('profiles').select('full_name').eq('id', user.id).single()
-    const firstName = profile?.full_name?.split(' ')[0] ?? 'Friend'
-    try {
-      await sendEmail({
-        to: user.email,
-        subject: `You are registered — ${CURRENT_COHORT_COURSE_TITLE}`,
-        html: registrationConfirmationEmail(firstName, CURRENT_COHORT_COURSE_TITLE, level, enrollment.matric_number ?? null, APP_URL),
-      })
-    } catch {
-      // Best-effort — never block enrollment on email delivery.
+    if (error || !enrollment) {
+      return NextResponse.json({ error: error?.message ?? 'Enrollment failed' }, { status: 500 })
     }
-  }
 
-  return NextResponse.json({ matricNumber: enrollment.matric_number ?? null })
+    if (!existing && isCohortCourse && isMailerConfigured() && user.email) {
+      const { data: profile } = await admin.from('profiles').select('full_name').eq('id', user.id).single()
+      const firstName = profile?.full_name?.split(' ')[0] ?? 'Friend'
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: `You are registered — ${CURRENT_COHORT_COURSE_TITLE}`,
+          html: registrationConfirmationEmail(firstName, CURRENT_COHORT_COURSE_TITLE, level, enrollment.matric_number ?? null, APP_URL),
+        })
+      } catch {
+        // Best-effort — never block enrollment on email delivery.
+      }
+    }
+
+    return NextResponse.json({ matricNumber: enrollment.matric_number ?? null })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Enrollment failed'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { certificateEmail } from '@/lib/email-templates'
 
@@ -21,10 +21,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing courseId' }, { status: 400 })
   }
 
-  const admin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const admin = createAdminClient()
 
   const [{ count: totalLessons }, { count: completedLessons }, { data: existing }] = await Promise.all([
     admin.from('lessons').select('*', { count: 'exact', head: true }).eq('course_id', courseId).eq('is_published', true),

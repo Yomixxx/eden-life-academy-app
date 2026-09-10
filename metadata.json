@@ -1,0 +1,8 @@
+{
+  "name": "Eden Life Academy",
+  "description": "Discipleship platform for Eden Life Experience Centre with courses, daily devotionals, sermons, Bible study, and certificates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
