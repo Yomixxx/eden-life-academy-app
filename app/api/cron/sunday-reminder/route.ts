@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { sundayReminderEmail } from '@/lib/email-templates'
-import { cleanEnv } from '@/lib/supabase/admin'
+import { cleanEnv } from '@/lib/env'
 
 // Runs Saturdays. Reminds every member with an address on file about
 // tomorrow's 10:00 AM Sunday service.
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cleanEnv(process.env.CRON_SECRET)}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

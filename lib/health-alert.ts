@@ -3,7 +3,9 @@
 // the thing that's broken, alerting through that same relay would never
 // arrive. ntfy.sh needs no account/API key: anyone who installs the free
 // ntfy app and subscribes to NTFY_ALERT_TOPIC gets an instant push.
-const NTFY_TOPIC = process.env.NTFY_ALERT_TOPIC
+import { cleanEnv } from '@/lib/env'
+
+const NTFY_TOPIC = cleanEnv(process.env.NTFY_ALERT_TOPIC)
 
 export function isPhoneAlertConfigured(): boolean {
   return !!NTFY_TOPIC

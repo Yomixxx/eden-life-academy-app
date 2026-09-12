@@ -2,17 +2,17 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { weeklyDigestEmail } from '@/lib/email-templates'
-import { cleanEnv } from '@/lib/supabase/admin'
+import { cleanEnv } from '@/lib/env'
 
 // Runs weekly on Fridays. Emails every member with an address on file a
 // roundup of sermons and announcements published in the last 7 days.
 // Skipped entirely (no emails sent) if there's nothing new that week.
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cleanEnv(process.env.CRON_SECRET)}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

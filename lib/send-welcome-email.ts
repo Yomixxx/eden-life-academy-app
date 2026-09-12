@@ -1,7 +1,8 @@
 import { sendEmail, isMailerConfigured } from './mailer'
 import { welcomeEmail } from './email-templates'
+import { cleanEnv } from '@/lib/env'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 
 // Server-side welcome email sender, for callers that already have the
 // recipient's address and name in hand (e.g. the auth callback route) and

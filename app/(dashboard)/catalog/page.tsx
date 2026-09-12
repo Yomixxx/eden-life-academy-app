@@ -71,7 +71,7 @@ function CourseCard({ course, enrollCount }: { course: Course; enrollCount: numb
         {course.total_lessons && (
           <span style={{ fontSize: '.68rem', color: 'var(--text-lo)', background: 'rgba(255,255,255,.04)', padding: '.3rem .7rem', borderRadius: 20 }}>{course.total_lessons} lessons</span>
         )}
-        {course.duration_minutes && (
+        {!!course.duration_minutes && (
           <span style={{ fontSize: '.68rem', color: 'var(--text-lo)', background: 'rgba(255,255,255,.04)', padding: '.3rem .7rem', borderRadius: 20 }}>
             {Math.floor(course.duration_minutes / 60) > 0 ? `${Math.floor(course.duration_minutes / 60)}h ` : ''}{course.duration_minutes % 60 > 0 ? `${course.duration_minutes % 60}m` : ''}
           </span>

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { sendPhoneAlert, isPhoneAlertConfigured } from '@/lib/health-alert'
-import { cleanEnv } from '@/lib/supabase/admin'
+import { cleanEnv } from '@/lib/env'
 
 // Runs every few hours. Unlike /api/health (a cheap uptime ping), this
 // exercises the EXACT same relay call the crisis-escalation path in
@@ -13,11 +13,11 @@ import { cleanEnv } from '@/lib/supabase/admin'
 // a channel independent of the mailer itself, since alerting through the
 // thing that's broken doesn't work.
 
-const ALERT_EMAIL = process.env.HEALTH_CHECK_EMAIL || process.env.PASTORAL_ALERT_EMAIL
+const ALERT_EMAIL = cleanEnv(process.env.HEALTH_CHECK_EMAIL) || cleanEnv(process.env.PASTORAL_ALERT_EMAIL)
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cleanEnv(process.env.CRON_SECRET)}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -69,7 +69,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
         )}
         <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', fontSize: '.82rem', color: 'var(--text-lo)', marginBottom: enrolled ? '1.25rem' : '1.5rem', position: 'relative' }}>
           {lessons.length > 0 && <span>{lessons.length} lessons</span>}
-          {course.duration_minutes && <span>{Math.round(course.duration_minutes / 60)}h {course.duration_minutes % 60}m</span>}
+          {!!course.duration_minutes && <span>{Math.round(course.duration_minutes / 60)}h {course.duration_minutes % 60}m</span>}
         </div>
 
         {enrolled ? (

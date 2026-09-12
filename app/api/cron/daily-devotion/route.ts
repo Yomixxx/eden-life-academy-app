@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { devotionEmail } from '@/lib/email-templates'
-import { cleanEnv } from '@/lib/supabase/admin'
+import { cleanEnv } from '@/lib/env'
 
 // Runs daily at 6am UTC (7am Lagos, UTC+1)
 // Generates a devotional in PG's voice, stores it for in-app display on
@@ -11,7 +11,7 @@ import { cleanEnv } from '@/lib/supabase/admin'
 // generation check above it — a re-invocation on a day already emailed
 // won't send a second round.
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 
 interface Devotion {
   scripture_reference: string
@@ -72,7 +72,7 @@ Return ONLY valid JSON. No explanation. No extra text.`
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cleanEnv(process.env.CRON_SECRET)}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

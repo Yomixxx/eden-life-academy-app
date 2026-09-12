@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { welcomeEmail } from '@/lib/email-templates'
+import { cleanEnv } from '@/lib/env'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 
 export async function POST() {
   if (!isMailerConfigured()) {

@@ -4,8 +4,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { registrationConfirmationEmail } from '@/lib/email-templates'
 import { CURRENT_COHORT_COURSE_ID, CURRENT_COHORT_COURSE_TITLE, CURRENT_COHORT_LABEL, ACADEMY_LEVELS } from '@/lib/academy'
+import { cleanEnv } from '@/lib/env'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 
 // Enroll via the course catalog's Enroll button — used by anyone who chose
 // "just explore" at signup and later changes their mind. For the current
@@ -54,7 +55,11 @@ export async function POST(req: Request) {
       .single()
 
     if (error || !enrollment) {
-      return NextResponse.json({ error: error?.message ?? 'Enrollment failed' }, { status: 500 })
+      // Surface the real cause in the Vercel logs (a misconfigured
+      // service-role key shows up here as a fetch TypeError), but never put
+      // an internal error string in front of a member.
+      console.error('[enroll] upsert failed', error)
+      return NextResponse.json({ error: 'Could not complete your enrollment. Please try again.' }, { status: 500 })
     }
 
     if (!existing && isCohortCourse && isMailerConfigured() && user.email) {
@@ -73,7 +78,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ matricNumber: enrollment.matric_number ?? null })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Enrollment failed'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[enroll] unexpected failure', err)
+    return NextResponse.json({ error: 'Could not complete your enrollment. Please try again.' }, { status: 500 })
   }
 }

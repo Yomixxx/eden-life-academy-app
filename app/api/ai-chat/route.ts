@@ -4,8 +4,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { detectCrisis, crisisResponse } from '@/lib/crisis-detection'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { pastoralAlertEmail } from '@/lib/email-templates'
+import { cleanEnv } from '@/lib/env'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 
 async function flagPastoralAlert(userId: string | null, category: string, message: string) {
   try {
@@ -15,10 +16,10 @@ async function flagPastoralAlert(userId: string | null, category: string, messag
     // Logging the alert must never block the user from getting the crisis response.
   }
 
-  if (!isMailerConfigured() || !process.env.PASTORAL_ALERT_EMAIL) return
+  if (!isMailerConfigured() || !cleanEnv(process.env.PASTORAL_ALERT_EMAIL)) return
   try {
     await sendEmail({
-      to: process.env.PASTORAL_ALERT_EMAIL,
+      to: cleanEnv(process.env.PASTORAL_ALERT_EMAIL),
       subject: `Pastoral Care Alert — ${category}`,
       html: pastoralAlertEmail(category, message, APP_URL),
     })

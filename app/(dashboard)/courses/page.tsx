@@ -82,7 +82,7 @@ export default async function CoursesPage() {
                   )}
                   <div style={{ display: 'flex', gap: '1rem', fontSize: '.78rem', color: 'var(--text-lo)', marginBottom: '1rem' }}>
                     {course.total_lessons && <span>{course.total_lessons} lessons</span>}
-                    {course.duration_minutes && <span>{Math.round(course.duration_minutes / 60)}h {course.duration_minutes % 60}m</span>}
+                    {!!course.duration_minutes && <span>{Math.round(course.duration_minutes / 60)}h {course.duration_minutes % 60}m</span>}
                     {course.level && <span style={{ textTransform: 'capitalize' }}>{course.level}</span>}
                   </div>
                   <a href={`/catalog/${course.id}`} style={{

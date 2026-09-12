@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { continueCourseEmail } from '@/lib/email-templates'
-import { cleanEnv } from '@/lib/supabase/admin'
+import { cleanEnv } from '@/lib/env'
 
 // Runs daily. Emails members who started a course but have gone quiet for a
 // few days, nudging them to finish it. Mirrors the in-app Continue Course
@@ -10,7 +10,7 @@ import { cleanEnv } from '@/lib/supabase/admin'
 // lessons and completed lesson_progress rows rather than the possibly-stale
 // courses.total_lessons column.
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 const INACTIVE_DAYS = 3
 const REMINDER_COOLDOWN_DAYS = 7
 
@@ -22,7 +22,7 @@ function daysAgo(n: number): string {
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cleanEnv(process.env.CRON_SECRET)}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

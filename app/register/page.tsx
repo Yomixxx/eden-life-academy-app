@@ -3,11 +3,12 @@ import { redirect } from 'next/navigation'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { registrationConfirmationEmail } from '@/lib/email-templates'
 import { CURRENT_COHORT_COURSE_ID, CURRENT_COHORT_COURSE_TITLE, CURRENT_COHORT_LABEL } from '@/lib/academy'
+import { cleanEnv } from '@/lib/env'
 
 // This is the one central "register for Cohort 3" link — every new or
 // returning visitor who signs up or logs in through it is enrolled here
 // automatically, then dropped on the course page. No manual Enroll click.
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.edenlifeng.org'
+const APP_URL = cleanEnv(process.env.NEXT_PUBLIC_APP_URL) || 'https://app.edenlifeng.org'
 
 export default async function RegisterPage() {
   const supabase = await createClient()

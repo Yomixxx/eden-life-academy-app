@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
-import { cleanEnv } from './admin'
+import { cleanEnv } from '@/lib/env'
 
 export function createClient() {
   const url = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL) || 'https://rpkxyuohbmbbzoqkulgn.supabase.co'

@@ -94,7 +94,7 @@ export default function LessonItem({ lesson, completed, locked, index }: LessonI
           <div style={{ fontSize: '.68rem', color: 'var(--text-lo)', fontWeight: 600 }}>Lesson {index + 1}</div>
           <div style={{ fontSize: '.92rem', fontWeight: 600, color: 'var(--text-hi)' }}>{lesson.title}</div>
         </div>
-        {lesson.duration_minutes && (
+        {!!lesson.duration_minutes && (
           <span style={{ fontSize: '.75rem', color: 'var(--text-lo)', flexShrink: 0 }}>{lesson.duration_minutes}m</span>
         )}
         {!locked && !open && (
