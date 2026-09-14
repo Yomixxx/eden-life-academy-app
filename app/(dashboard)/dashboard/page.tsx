@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { LiveBanner, InviteCard } from './DashboardExtras'
 import ContinueCoursePopup from '@/components/ContinueCoursePopup'
+import LiveClassBanner from '@/components/LiveClassBanner'
+import { CURRENT_COHORT_COURSE_ID } from '@/lib/academy'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -25,6 +27,18 @@ export default async function DashboardPage() {
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Friend'
   const academyEnrollment = enrollments.find(e => e.matric_number)
+
+  // For the dashboard's live-class banner: find this student's enrollment in
+  // the current cohort course and use its academy level. The banner polls
+  // class_links itself, so it lights up within ~20s of the admin going live
+  // even if this page rendered earlier.
+  const cohortEnrollment = enrollments.find(e => e.course_id === CURRENT_COHORT_COURSE_ID)
+  const liveClassLevel = cohortEnrollment?.academy_level ?? null
+  let liveClassInitial: { level: string; meet_url: string | null; schedule_label: string | null; is_live: boolean } | null = null
+  if (liveClassLevel) {
+    const { data } = await supabase.from('class_links').select('*').eq('level', liveClassLevel).maybeSingle()
+    liveClassInitial = data ?? null
+  }
 
   // Find the most recently active course that's been started but not finished,
   // so we can nudge the user to pick it back up.
@@ -62,6 +76,13 @@ export default async function DashboardPage() {
         />
       )}
       <LiveBanner />
+      {liveClassLevel && (
+        <LiveClassBanner
+          level={liveClassLevel}
+          courseHref={`/catalog/${CURRENT_COHORT_COURSE_ID}`}
+          initial={liveClassInitial}
+        />
+      )}
       {/* Welcome */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '1.75rem 2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(94,201,87,.07), transparent 60%)' }}>
         <div style={{ position: 'absolute', top: -60, right: -40, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(52,211,153,.14), transparent 70%)', pointerEvents: 'none' }} />

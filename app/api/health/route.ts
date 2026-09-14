@@ -19,15 +19,32 @@ export async function GET() {
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey)
-  const { error } = await supabase.from('profiles').select('id').limit(1)
+  // Also probe class_links: the live class feature silently no-ops when the
+  // table is missing (admin "Go Live" appears to work but never persists),
+  // and no other check would ever surface that.
+  const [{ error }, { error: classLinksError }] = await Promise.all([
+    supabase.from('profiles').select('id').limit(1),
+    supabase.from('class_links').select('level').limit(1),
+  ])
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 503 })
   }
 
+  if (classLinksError) {
+    return NextResponse.json({
+      ok: false,
+      database: 'reachable',
+      error: `class_links table unavailable: ${classLinksError.message}`,
+      mailer: isMailerConfigured() ? 'configured' : 'not configured',
+      time: new Date().toISOString(),
+    }, { status: 503 })
+  }
+
   return NextResponse.json({
     ok: true,
     database: 'reachable',
+    liveClasses: 'ok',
     mailer: isMailerConfigured() ? 'configured' : 'not configured',
     time: new Date().toISOString(),
   })
