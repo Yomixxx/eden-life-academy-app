@@ -49,9 +49,11 @@ describe('LiveClassBanner (student dashboard)', () => {
     )
     expect(await screen.findByText('200 Level class')).toBeInTheDocument()
     expect(screen.getByText('Saturdays 8:30–9:30AM')).toBeInTheDocument()
-    expect(screen.getByText(/your join button appears here the moment your host starts the class/i)).toBeInTheDocument()
+    expect(screen.getByText(/your join button turns red when your host starts the class/i)).toBeInTheDocument()
+    const join = screen.getByRole('link', { name: /join class.*not live yet/i })
+    expect(join).toHaveAttribute('href', MEET_URL)
+    expect(join).toHaveAttribute('title', 'Turns red when host starts')
     expect(screen.getByRole('link', { name: /open course/i })).toHaveAttribute('href', '/catalog/cohort-3')
-    expect(screen.queryByRole('link', { name: /join class/i })).not.toBeInTheDocument()
   })
 
   it('explains a missing Meet link while live instead of rendering no button', async () => {

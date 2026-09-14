@@ -19,11 +19,13 @@ on conflict (level) do nothing;
 
 alter table public.class_links enable row level security;
 
+drop policy if exists "Anyone authenticated can view class links" on public.class_links;
 create policy "Anyone authenticated can view class links"
   on public.class_links for select
   to authenticated
   using (true);
 
+drop policy if exists "Admins can manage class links" on public.class_links;
 create policy "Admins can manage class links"
   on public.class_links for all
   using (is_admin())
@@ -40,14 +42,17 @@ create table if not exists public.class_attendance (
 
 alter table public.class_attendance enable row level security;
 
+drop policy if exists "Users can view own attendance" on public.class_attendance;
 create policy "Users can view own attendance"
   on public.class_attendance for select
   using (user_id = auth.uid());
 
+drop policy if exists "Admins can view all attendance" on public.class_attendance;
 create policy "Admins can view all attendance"
   on public.class_attendance for select
   using (is_admin());
 
+drop policy if exists "Users can self-report attendance while their class is live" on public.class_attendance;
 create policy "Users can self-report attendance while their class is live"
   on public.class_attendance for insert
   with check (

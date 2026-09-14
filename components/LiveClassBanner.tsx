@@ -17,7 +17,8 @@ interface LiveClassInfo {
 // had no idea a class was happening, no schedule, and no join button — and
 // when the host started the meeting without saving a Meet link, the banner
 // said "class is live now" but still rendered no button. Both cases now
-// render a visible card that explains itself.
+// render a visible card that explains itself. When a Meet link is available,
+// the join button is visible before the class starts and turns red when live.
 //
 // Polls class_links so the button appears within ~20 seconds of the admin
 // going live, even if the dashboard was rendered before that.
@@ -105,26 +106,48 @@ export default function LiveClassBanner({ level, courseHref, initial }: {
           <p style={{ margin: 0, fontSize: '.78rem', color: 'var(--text-lo)' }}>{sub}</p>
           {!live && (
             <p style={{ margin: 0, fontSize: '.78rem', color: 'var(--text-lo)' }}>
-              Your join button appears here the moment your host starts the class.
+              Your join button turns red when your host starts the class.
             </p>
           )}
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: '.6rem', flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' }}>
-        {live && meetUrl && (
+        {meetUrl && (
           <a
             href={meetUrl}
             target="_blank"
             rel="noopener noreferrer"
+            title={!live ? 'Turns red when host starts' : undefined}
             style={{
-              background: '#ef4444', color: '#fff', fontSize: '.8rem', fontWeight: 700,
+              background: live ? '#ef4444' : 'var(--bg-3)',
+              color: live ? '#fff' : 'var(--text-md)',
+              fontSize: '.8rem', fontWeight: 700,
               padding: '.55rem 1.1rem', borderRadius: 8, textDecoration: 'none',
               minHeight: 40, display: 'inline-flex', alignItems: 'center',
             }}
           >
-            Join Class
+            {live ? 'Join Class' : 'Join Class — Not live yet'}
           </a>
+        )}
+
+        {!meetUrl && !live && (
+          // Keep the join-button position occupied before the host has saved
+          // a Meet link. This makes the dashboard predictable instead of
+          // making the button appear to be missing.
+          <span
+            aria-disabled="true"
+            title="The meeting link will appear here when your host posts it."
+            style={{
+              background: 'var(--bg-3)', color: 'var(--text-lo)',
+              border: '1px solid var(--border)', fontSize: '.8rem', fontWeight: 700,
+              padding: '.55rem 1.1rem', borderRadius: 8,
+              minHeight: 40, display: 'inline-flex', alignItems: 'center',
+              cursor: 'default',
+            }}
+          >
+            Join Class
+          </span>
         )}
 
         {live && !meetUrl && (
