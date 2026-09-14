@@ -33,6 +33,11 @@ export default function AdminLiveClasses() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [status, setStatus] = useState<Record<string, RowStatus>>({})
+  // Levels whose Meet link / schedule have been typed but not written to the
+  // database yet. Without this an admin could paste a link, press "Go Live"
+  // (which used to save only is_live), and the students would see "class is
+  // live now" with no join button at all.
+  const [dirty, setDirty] = useState<Record<string, boolean>>({})
   const supabase = createClient()
 
   const load = useCallback(async () => {
@@ -64,6 +69,7 @@ export default function AdminLiveClasses() {
       .maybeSingle()
     if (!error && data) {
       setLinks(prev => ({ ...prev, [level]: { ...prev[level], ...(data as ClassLink) } }))
+      setDirty(prev => ({ ...prev, [level]: false }))
       return true
     }
     return false
@@ -78,6 +84,7 @@ export default function AdminLiveClasses() {
       const current = prev[level] ?? { level, ...EMPTY_ROW }
       return { ...prev, [level]: { ...current, [field]: value } }
     })
+    setDirty(prev => ({ ...prev, [level]: true }))
   }
 
   async function saveLevel(level: string) {
@@ -99,9 +106,29 @@ export default function AdminLiveClasses() {
     const row = links[level] ?? { level, ...EMPTY_ROW }
     const nextLive = !row.is_live
     const previousLive = row.is_live
+
+    // Going live with no Meet link produces a student dashboard that says
+    // "class is live now" and renders no join button — the single most
+    // reported failure. Refuse it up front and say exactly what's missing.
+    if (nextLive && !row.meet_url?.trim()) {
+      flash(level, {
+        kind: 'error',
+        message: 'Add the Google Meet link first — students would see "live now" with no button to join.',
+      })
+      return
+    }
+
     setLinks(prev => ({ ...prev, [level]: { ...prev[level], is_live: nextLive } }))
     flash(level, { kind: 'saving' })
-    const { error } = await supabase.from('class_links').update({ is_live: nextLive }).eq('level', level)
+
+    // Persist the typed link/schedule in the same write as the toggle, so
+    // "paste link, press Go Live" works without a separate Save click.
+    const { error } = await supabase.from('class_links').update(
+      nextLive
+        ? { is_live: true, meet_url: row.meet_url?.trim() || null, schedule_label: row.schedule_label || null }
+        : { is_live: false }
+    ).eq('level', level)
+
     if (error) {
       // Revert the optimistic flip so the button reflects the database,
       // and show exactly why the write was rejected.
@@ -113,7 +140,7 @@ export default function AdminLiveClasses() {
     flash(level, {
       kind: 'ok',
       message: nextLive
-        ? 'Live in the database — students with the course page open will see it within ~20 seconds'
+        ? 'Live in the database — students with the dashboard or course page open will see the join button within ~20 seconds'
         : 'Live ended in the database',
     })
   }
@@ -192,6 +219,7 @@ export default function AdminLiveClasses() {
                   </h2>
                   <button
                     onClick={() => toggleLive(level)}
+                    title={row.is_live ? 'End the live session for students' : (row.meet_url?.trim() ? 'Publish the join button to students' : 'Add a Google Meet link first')}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '.5rem',
                       fontSize: '.8rem', fontWeight: 700, padding: '.5rem 1rem',
@@ -218,6 +246,11 @@ export default function AdminLiveClasses() {
                       value={row.meet_url ?? ''}
                       onChange={e => updateField(level, 'meet_url', e.target.value)}
                     />
+                    {!row.meet_url?.trim() && (
+                      <p style={{ fontSize: '.75rem', color: '#fbbf24', margin: '.4rem 0 0' }}>
+                        Required to go live — this is the button students press to join.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '.72rem', fontWeight: 600, letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--text-lo)', marginBottom: '.4rem' }}>Schedule</label>
@@ -234,6 +267,11 @@ export default function AdminLiveClasses() {
                   <button onClick={() => saveLevel(level)} disabled={st?.kind === 'saving'} style={{ ...btnSecondary, opacity: st?.kind === 'saving' ? 0.6 : 1 }}>
                     {st?.kind === 'saving' ? 'Saving…' : 'Save'}
                   </button>
+                  {dirty[level] && (
+                    <span style={{ fontSize: '.8rem', fontWeight: 600, color: '#fbbf24' }}>
+                      Unsaved changes — press Save, or Go Live saves them for you.
+                    </span>
+                  )}
                   {st && (
                     <span style={{
                       fontSize: '.8rem', fontWeight: 600,

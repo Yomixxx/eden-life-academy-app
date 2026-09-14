@@ -16,6 +16,9 @@ cp .env.local.example .env.local   # fill in Supabase URL + anon key
 npm run dev
 ```
 
+`npm test` runs the Vitest suite (live class join button states, admin go-live
+validation, academy level resolution) — no database required.
+
 Required env vars (also needed as Vercel project env vars for production):
 
 - `NEXT_PUBLIC_SUPABASE_URL`
