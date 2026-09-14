@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface ClassLink {
@@ -15,14 +15,39 @@ export default function LiveClassCard({ level, initial }: { level: string; initi
   const [markedToday, setMarkedToday] = useState(false)
   const [checkedAttendance, setCheckedAttendance] = useState(false)
   const [marking, setMarking] = useState(false)
+  // True once a read of class_links has failed repeatedly without ever
+  // succeeding — the card then shows a small notice instead of rendering
+  // nothing, so a broken table/policy is visible instead of silent.
+  const [loadFailed, setLoadFailed] = useState(false)
+  const everLoadedRef = useRef(initial != null)
+  const failuresRef = useRef(0)
   const supabase = createClient()
 
   const refresh = useCallback(async () => {
-    const { data } = await supabase.from('class_links').select('*').eq('level', level).maybeSingle()
-    if (data) setLink(data as ClassLink)
+    const { data, error } = await supabase.from('class_links').select('*').eq('level', level).maybeSingle()
+    if (error) {
+      // Keep the last known state on transient errors — never blank the
+      // card. But if we have never loaded at all, surface it after a
+      // couple of consecutive failures so it's not silently invisible.
+      if (!everLoadedRef.current) {
+        failuresRef.current += 1
+        if (failuresRef.current >= 2) {
+          console.error('[LiveClassCard] class_links read failed for level', level, error)
+          setLoadFailed(true)
+        }
+      }
+      return
+    }
+    failuresRef.current = 0
+    if (data) {
+      everLoadedRef.current = true
+      setLoadFailed(false)
+      setLink(data as ClassLink)
+    }
   }, [level])
 
   useEffect(() => {
+    refresh()
     const id = setInterval(refresh, 20000)
     return () => clearInterval(id)
   }, [refresh])
@@ -56,7 +81,20 @@ export default function LiveClassCard({ level, initial }: { level: string; initi
     setMarking(false)
   }
 
-  if (!link) return null
+  if (!link && !loadFailed) return null
+
+  if (!link) {
+    return (
+      <div style={{
+        background: 'var(--bg-2)', border: '1px solid var(--border)',
+        borderRadius: 14, padding: '1rem 1.5rem', marginBottom: '1.75rem',
+      }}>
+        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--text-lo)' }}>
+          We can&rsquo;t load live class information right now — please refresh the page in a minute.
+        </p>
+      </div>
+    )
+  }
 
   const live = link.is_live
 
