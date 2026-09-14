@@ -119,7 +119,7 @@ export default function LiveClassCard({ level, initial }: { level: string; initi
             )}
           </div>
         </div>
-        {link.meet_url && (
+        {link.meet_url ? (
           <a
             href={link.meet_url}
             target="_blank"
@@ -130,12 +130,38 @@ export default function LiveClassCard({ level, initial }: { level: string; initi
               fontSize: '.85rem', fontWeight: 700,
               background: live ? '#ef4444' : 'var(--bg-3)',
               color: live ? '#fff' : 'var(--text-md)',
+              minHeight: 42,
             }}
           >
             Join Class
           </a>
+        ) : (
+          // No link saved by the host yet. While live this is the "I can't
+          // find the join button" case, so explain it instead of rendering
+          // nothing; before class it's simply a disabled placeholder.
+          <span
+            aria-disabled="true"
+            title={live ? 'Your host has not posted the meeting link yet.' : 'The link is posted when your class starts.'}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '.5rem',
+              padding: '.65rem 1.25rem', borderRadius: 10,
+              fontSize: '.85rem', fontWeight: 700, minHeight: 42,
+              background: live ? 'rgba(251,191,36,.12)' : 'var(--bg-3)',
+              border: live ? '1px solid rgba(251,191,36,.35)' : '1px solid var(--border)',
+              color: live ? '#fbbf24' : 'var(--text-lo)',
+              cursor: 'default',
+            }}
+          >
+            {live ? 'Link coming…' : 'Join Class'}
+          </span>
         )}
       </div>
+
+      {live && !link.meet_url && (
+        <p style={{ margin: 0, fontSize: '.78rem', color: '#fbbf24' }}>
+          Your host is posting the meeting link — it appears here automatically within about 20 seconds.
+        </p>
+      )}
 
       {live && checkedAttendance && (
         <button

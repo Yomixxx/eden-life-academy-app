@@ -76,13 +76,33 @@ export default async function DashboardPage() {
         />
       )}
       <LiveBanner />
-      {liveClassLevel && (
+      {liveClassLevel ? (
         <LiveClassBanner
           level={liveClassLevel}
           courseHref={`/catalog/${CURRENT_COHORT_COURSE_ID}`}
           initial={liveClassInitial}
         />
-      )}
+      ) : cohortEnrollment ? (
+        // Registered for the cohort but the enrollment row has no level, so
+        // there is nothing to look up in class_links. Say so and point at the
+        // one screen that fixes it, instead of showing no live class UI at all.
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '1rem', flexWrap: 'wrap',
+          background: 'var(--bg-2)', border: '1px solid rgba(251,191,36,.35)',
+          borderRadius: 14, padding: '1rem 1.5rem', marginBottom: '1.5rem',
+        }}>
+          <p style={{ margin: 0, fontSize: '.88rem', color: 'var(--text-md)' }}>
+            You&apos;re registered for the Academy, but we don&apos;t have your level (100/200/300) yet — that&apos;s what your live class join button is matched to.
+          </p>
+          <a href="/register" style={{
+            background: 'var(--eden)', color: 'var(--bg-0)', fontSize: '.8rem', fontWeight: 700,
+            padding: '.55rem 1.1rem', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap',
+          }}>
+            Choose my level
+          </a>
+        </div>
+      ) : null}
       {/* Welcome */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '1.75rem 2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(94,201,87,.07), transparent 60%)' }}>
         <div style={{ position: 'absolute', top: -60, right: -40, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(52,211,153,.14), transparent 70%)', pointerEvents: 'none' }} />

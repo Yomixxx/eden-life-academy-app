@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { sendEmail, isMailerConfigured } from '@/lib/mailer'
 import { registrationConfirmationEmail } from '@/lib/email-templates'
-import { CURRENT_COHORT_COURSE_ID, CURRENT_COHORT_COURSE_TITLE, CURRENT_COHORT_LABEL } from '@/lib/academy'
+import { CURRENT_COHORT_COURSE_ID, CURRENT_COHORT_COURSE_TITLE, CURRENT_COHORT_LABEL, resolveAcademyLevel } from '@/lib/academy'
+import PickAcademyLevel from '@/components/PickAcademyLevel'
 
 // This is the one central "register for Cohort 3" link — every new or
 // returning visitor who signs up or logs in through it is enrolled here
@@ -14,16 +15,31 @@ export default async function RegisterPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/signup?next=/register')
 
-  const academyLevel = typeof user.user_metadata?.academy_level === 'string' ? user.user_metadata.academy_level : null
+  const metaLevel = user.user_metadata?.academy_level
 
   // Checked before the upsert so the confirmation email only fires on a
   // genuinely new registration, not every time this link is revisited.
   const { data: existing } = await supabase
     .from('enrollments')
-    .select('id')
+    .select('id, academy_level')
     .eq('user_id', user.id)
     .eq('course_id', CURRENT_COHORT_COURSE_ID)
     .maybeSingle()
+
+  // Auth metadata is only populated by the signup/setup flows. Someone who
+  // explored first and later enrolled through the catalog has their level on
+  // the enrollment row but not in metadata — falling back to it here stops
+  // this link from overwriting a known level with NULL, which silently took
+  // away their live class card and join button.
+  const existingLevel = existing?.academy_level ?? null
+  const academyLevel = resolveAcademyLevel(metaLevel, existingLevel)
+
+  if (!academyLevel) {
+    // Never create a cohort enrollment without a level: the level is the key
+    // the whole live-class feature (dashboard banner, course card, attendance)
+    // looks up class_links by, so a null level means no join button at all.
+    return <PickAcademyLevel />
+  }
 
   const { data: enrollment } = await supabase
     .from('enrollments')
