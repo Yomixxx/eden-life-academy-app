@@ -17,7 +17,8 @@ npm run dev
 ```
 
 `npm test` runs the Vitest suite (live class join button states, admin go-live
-validation, academy level resolution) — no database required.
+validation, academy level resolution, stale-build banner, and drift-check
+coverage) — no database required.
 
 Required env vars (also needed as Vercel project env vars for production):
 
@@ -25,6 +26,21 @@ Required env vars (also needed as Vercel project env vars for production):
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `RESEND_API_KEY` — for outbound email (welcome, announcements, course reminders, pastoral crisis alerts). Get one from [resend.com](https://resend.com); without it, email sending is silently disabled.
 - `RESEND_FROM_EMAIL` — optional, e.g. `Eden Life Academy <noreply@edenlifeng.org>`. Requires verifying that sending domain in the Resend dashboard first. Falls back to Resend's shared `onboarding@resend.dev` sender, which only delivers to the Resend account's own verified email address — fine for testing, not for real users.
+
+## Keeping the database in sync
+
+Migrations in `supabase/migrations/` are **not** applied automatically — there
+is no CI step and no `supabase/config.toml`, so each one only reaches
+production when a human pastes it into Supabase → SQL Editor and runs it. That
+is the only way this project drifts, and drift looks like "the feature does
+nothing" rather than an error.
+
+After running any migration, paste
+[`supabase/migrations/00_verify_schema_drift.sql`](supabase/migrations/00_verify_schema_drift.sql)
+into the SQL Editor too. It is read-only and compares the live schema with
+every table, column, function, trigger, policy, seed row and storage bucket the
+app actually uses, printing a `fix_hint` for anything missing. `npm test` fails
+if that script's expectation list stops matching the code.
 
 ## How courses work
 
