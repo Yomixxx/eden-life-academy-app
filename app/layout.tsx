@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Montserrat, Poppins } from 'next/font/google'
+import StaleDeploymentBanner from '@/components/StaleDeploymentBanner'
 import './globals.css'
 
 const montserrat = Montserrat({
@@ -33,6 +34,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${montserrat.variable} ${poppins.variable}`}>
+        {/* Admin-only diagnostic: lights up when the build being served is not
+            the build this page was compiled from (stale Vercel promotion). */}
+        <StaleDeploymentBanner />
         {children}
       </body>
     </html>
