@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import CompleteRegistrationGate from '@/components/CompleteRegistrationGate'
 
 const navGroups = [
   {
@@ -418,6 +419,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* Scans for incomplete Academy registration on every page and immediately
+          prompts for level; matric is assigned the moment they save. */}
+      <CompleteRegistrationGate />
 
       {/* Bottom nav — mobile only */}
       <nav className="bottom-nav" style={{ display: 'none' }}>

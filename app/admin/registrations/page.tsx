@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ACADEMY_LEVELS } from '@/lib/academy'
+import { ACADEMY_LEVELS, isIncompleteAcademyEnrollment } from '@/lib/academy'
 
 const ACCENT = '#f97316'
 
@@ -22,6 +22,7 @@ interface Registration {
   academy_level: string | null
   cohort: string | null
   matric_number: string | null
+  course_id?: string | null
   profiles: { full_name: string | null; phone: string | null; email: string | null } | null
   courses: { title: string } | null
 }
@@ -38,12 +39,16 @@ export default function AdminRegistrations() {
   const [levelFilter, setLevelFilter] = useState('')
   const [monthFilter, setMonthFilter] = useState('')
   const [cohortFilter, setCohortFilter] = useState('')
+  const [incompleteOnly, setIncompleteOnly] = useState(false)
+  const [savingId, setSavingId] = useState<string | null>(null)
+  const [draftLevels, setDraftLevels] = useState<Record<string, string>>({})
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({})
   const supabase = createClient()
 
   const load = useCallback(async () => {
     const { data } = await supabase
       .from('enrollments')
-      .select('id, enrolled_at, academy_level, cohort, matric_number, profiles(full_name, phone, email), courses(title)')
+      .select('id, enrolled_at, academy_level, cohort, matric_number, course_id, profiles(full_name, phone, email), courses(title)')
       .order('enrolled_at', { ascending: false })
     setRegistrations((data as unknown as Registration[]) ?? [])
     setLoading(false)
@@ -61,8 +66,18 @@ export default function AdminRegistrations() {
     return Array.from(values).sort()
   }, [registrations])
 
+  const incompleteCount = useMemo(
+    () => registrations.filter(r => isIncompleteAcademyEnrollment(r)).length,
+    [registrations],
+  )
+
   const filtered = registrations.filter(r => {
-    if (levelFilter && r.academy_level !== levelFilter) return false
+    if (incompleteOnly && !isIncompleteAcademyEnrollment(r)) return false
+    if (levelFilter === '__none__') {
+      if (r.academy_level) return false
+    } else if (levelFilter && r.academy_level !== levelFilter) {
+      return false
+    }
     if (monthFilter && monthKey(r.enrolled_at) !== monthFilter) return false
     if (cohortFilter && r.cohort !== cohortFilter) return false
     if (!search) return true
@@ -76,8 +91,45 @@ export default function AdminRegistrations() {
     )
   })
 
+  async function completeRegistration(r: Registration) {
+    const level = draftLevels[r.id] || r.academy_level || ''
+    if (!level) {
+      setRowErrors(prev => ({ ...prev, [r.id]: 'Choose a level first.' }))
+      return
+    }
+    setSavingId(r.id)
+    setRowErrors(prev => {
+      const next = { ...prev }
+      delete next[r.id]
+      return next
+    })
+    try {
+      const res = await fetch('/api/admin/registrations/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollmentId: r.id, academyLevel: level }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error ?? 'Could not complete registration.')
+
+      setRegistrations(prev => prev.map(row => row.id === r.id ? {
+        ...row,
+        academy_level: body.academyLevel ?? level,
+        cohort: body.cohort ?? row.cohort,
+        matric_number: body.matricNumber ?? row.matric_number,
+      } : row))
+    } catch (err) {
+      setRowErrors(prev => ({
+        ...prev,
+        [r.id]: err instanceof Error ? err.message : 'Could not complete registration.',
+      }))
+    } finally {
+      setSavingId(null)
+    }
+  }
+
   function exportCsv() {
-    const header = ['Matric Number', 'Full Name', 'Email', 'Phone', 'Course', 'Level', 'Cohort', 'Enrolled At']
+    const header = ['Matric Number', 'Full Name', 'Email', 'Phone', 'Course', 'Level', 'Cohort', 'Enrolled At', 'Status']
     const lines = [header.join(',')]
     for (const r of filtered) {
       lines.push([
@@ -89,6 +141,7 @@ export default function AdminRegistrations() {
         csvCell(r.academy_level),
         csvCell(r.cohort),
         csvCell(r.enrolled_at),
+        csvCell(isIncompleteAcademyEnrollment(r) ? 'incomplete' : 'complete'),
       ].join(','))
     }
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
@@ -121,11 +174,18 @@ export default function AdminRegistrations() {
           <h1 style={{ fontFamily: 'var(--font-montserrat), Montserrat, sans-serif', fontWeight: 800, fontSize: '1.6rem', color: 'var(--text-hi)', margin: 0 }}>Registrations</h1>
           {!loading && (
             <p style={{ color: 'var(--text-lo)', fontSize: '.88rem', marginTop: '.35rem' }}>
-              {search || levelFilter || monthFilter || cohortFilter ? `${filtered.length} of ${registrations.length} registered` : `${registrations.length} registered`}
+              {search || levelFilter || monthFilter || cohortFilter || incompleteOnly
+                ? `${filtered.length} of ${registrations.length} registered`
+                : `${registrations.length} registered`}
+              {incompleteCount > 0 && (
+                <span style={{ marginLeft: '.5rem', color: '#fbbf24' }}>
+                  · {incompleteCount} missing level or matric
+                </span>
+              )}
             </p>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             style={{ ...inputStyle, width: '100%', maxWidth: 260 }}
             placeholder="Search name, email, matric no…"
@@ -138,6 +198,7 @@ export default function AdminRegistrations() {
             onChange={e => setLevelFilter(e.target.value)}
           >
             <option value="">All levels</option>
+            <option value="__none__">No level set</option>
             {ACADEMY_LEVELS.map(l => <option key={l} value={l}>{l} Level</option>)}
           </select>
           <select
@@ -157,6 +218,18 @@ export default function AdminRegistrations() {
             {cohortOptions.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <button
+            type="button"
+            onClick={() => setIncompleteOnly(v => !v)}
+            style={{
+              ...btnSecondary,
+              border: incompleteOnly ? '1px solid rgba(251,191,36,.5)' : '1px solid var(--border)',
+              background: incompleteOnly ? 'rgba(251,191,36,.12)' : 'var(--bg-3)',
+              color: incompleteOnly ? '#fbbf24' : 'var(--text-md)',
+            }}
+          >
+            {incompleteOnly ? 'Showing incomplete' : 'Incomplete only'}
+          </button>
+          <button
             onClick={exportCsv}
             disabled={!filtered.length}
             style={{
@@ -173,41 +246,113 @@ export default function AdminRegistrations() {
         </div>
       </div>
 
+      {incompleteCount > 0 && !incompleteOnly && (
+        <div style={{
+          marginBottom: '1.25rem', padding: '1rem 1.25rem', borderRadius: 12,
+          background: 'rgba(251,191,36,.08)', border: '1px solid rgba(251,191,36,.3)',
+          color: 'var(--text-md)', fontSize: '.88rem', lineHeight: 1.55,
+        }}>
+          <strong style={{ color: '#fbbf24' }}>{incompleteCount} registration{incompleteCount === 1 ? '' : 's'}</strong>
+          {' '}missing a level and/or matric number. Use the level dropdown on those rows and click <em>Set level</em>,
+          or ask the student to open <code style={{ fontSize: '.8rem' }}>/register</code>. Click <em>Incomplete only</em> to focus the list.
+        </div>
+      )}
+
       {loading ? (
         <div style={{ color: 'var(--text-lo)', fontSize: '.9rem', padding: '2rem 0' }}>Loading registrations…</div>
       ) : filtered.length === 0 ? (
         <div style={{ background: 'var(--bg-1)', border: '1px dashed var(--border)', borderRadius: 14, padding: '3rem', textAlign: 'center', color: 'var(--text-lo)' }}>
-          {search || levelFilter || monthFilter || cohortFilter ? 'No registrations match your filters.' : 'No one has registered yet.'}
+          {search || levelFilter || monthFilter || cohortFilter || incompleteOnly ? 'No registrations match your filters.' : 'No one has registered yet.'}
         </div>
       ) : (
         <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 780 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Name', 'Contact', 'Course', 'Level', 'Matric Number', 'Cohort', 'Enrolled'].map(h => (
+                  {['Name', 'Contact', 'Course', 'Level', 'Matric Number', 'Cohort', 'Enrolled', 'Fix'].map(h => (
                     <th key={h} style={{ padding: '.75rem 1rem', textAlign: 'left', fontSize: '.72rem', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-lo)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => (
-                  <tr key={r.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <td style={{ padding: '.85rem 1rem', fontSize: '.88rem', fontWeight: 500, color: 'var(--text-hi)', whiteSpace: 'nowrap' }}>{r.profiles?.full_name ?? 'Unnamed'}</td>
-                    <td style={{ padding: '.85rem 1rem', fontSize: '.8rem', color: 'var(--text-lo)' }}>{r.profiles?.email ?? r.profiles?.phone ?? '—'}</td>
-                    <td style={{ padding: '.85rem 1rem', fontSize: '.85rem', color: 'var(--text-md)' }}>{r.courses?.title ?? '—'}</td>
-                    <td style={{ padding: '.85rem 1rem' }}>
-                      {r.academy_level ? (
-                        <span style={{ fontSize: '.72rem', padding: '.2rem .6rem', background: 'var(--bg-3)', borderRadius: 99, color: 'var(--text-lo)', whiteSpace: 'nowrap' }}>{r.academy_level} Level</span>
-                      ) : '—'}
-                    </td>
-                    <td style={{ padding: '.85rem 1rem', fontSize: '.8rem', color: 'rgba(94,201,87,.9)', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{r.matric_number ?? '—'}</td>
-                    <td style={{ padding: '.85rem 1rem', fontSize: '.8rem', color: 'var(--text-lo)', whiteSpace: 'nowrap' }}>{r.cohort ?? '—'}</td>
-                    <td style={{ padding: '.85rem 1rem', fontSize: '.8rem', color: 'var(--text-lo)', whiteSpace: 'nowrap' }}>
-                      {r.enrolled_at ? new Date(r.enrolled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((r, i) => {
+                  const incomplete = isIncompleteAcademyEnrollment(r)
+                  return (
+                    <tr
+                      key={r.id}
+                      style={{
+                        borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+                        background: incomplete ? 'rgba(251,191,36,.04)' : 'transparent',
+                      }}
+                    >
+                      <td style={{ padding: '.85rem 1rem', fontSize: '.88rem', fontWeight: 500, color: 'var(--text-hi)', whiteSpace: 'nowrap' }}>
+                        {r.profiles?.full_name ?? 'Unnamed'}
+                        {incomplete && (
+                          <span style={{
+                            marginLeft: '.5rem', fontSize: '.65rem', fontWeight: 700, letterSpacing: '.04em',
+                            textTransform: 'uppercase', color: '#fbbf24',
+                            background: 'rgba(251,191,36,.12)', border: '1px solid rgba(251,191,36,.3)',
+                            borderRadius: 99, padding: '.15rem .45rem',
+                          }}>
+                            Incomplete
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '.85rem 1rem', fontSize: '.8rem', color: 'var(--text-lo)' }}>{r.profiles?.email ?? r.profiles?.phone ?? '—'}</td>
+                      <td style={{ padding: '.85rem 1rem', fontSize: '.85rem', color: 'var(--text-md)' }}>{r.courses?.title ?? '—'}</td>
+                      <td style={{ padding: '.85rem 1rem' }}>
+                        {r.academy_level ? (
+                          <span style={{ fontSize: '.72rem', padding: '.2rem .6rem', background: 'var(--bg-3)', borderRadius: 99, color: 'var(--text-lo)', whiteSpace: 'nowrap' }}>{r.academy_level} Level</span>
+                        ) : (
+                          <select
+                            aria-label={`Set level for ${r.profiles?.full_name ?? 'member'}`}
+                            value={draftLevels[r.id] ?? ''}
+                            onChange={e => setDraftLevels(prev => ({ ...prev, [r.id]: e.target.value }))}
+                            style={{
+                              ...inputStyle, padding: '.35rem .55rem', fontSize: '.8rem', cursor: 'pointer',
+                              borderColor: 'rgba(251,191,36,.4)',
+                            }}
+                          >
+                            <option value="" disabled>Set level…</option>
+                            {ACADEMY_LEVELS.map(l => <option key={l} value={l}>{l} Level</option>)}
+                          </select>
+                        )}
+                      </td>
+                      <td style={{ padding: '.85rem 1rem', fontSize: '.8rem', color: r.matric_number ? 'rgba(94,201,87,.9)' : '#fbbf24', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                        {r.matric_number ?? '—'}
+                      </td>
+                      <td style={{ padding: '.85rem 1rem', fontSize: '.8rem', color: 'var(--text-lo)', whiteSpace: 'nowrap' }}>{r.cohort ?? '—'}</td>
+                      <td style={{ padding: '.85rem 1rem', fontSize: '.8rem', color: 'var(--text-lo)', whiteSpace: 'nowrap' }}>
+                        {r.enrolled_at ? new Date(r.enrolled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                      </td>
+                      <td style={{ padding: '.85rem 1rem', whiteSpace: 'nowrap' }}>
+                        {incomplete ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
+                            <button
+                              type="button"
+                              disabled={savingId === r.id || !(draftLevels[r.id] || r.academy_level)}
+                              onClick={() => completeRegistration(r)}
+                              style={{
+                                background: 'var(--eden)', color: 'var(--bg-0)', border: 'none',
+                                borderRadius: 8, padding: '.4rem .75rem', fontSize: '.78rem', fontWeight: 700,
+                                cursor: savingId === r.id || !(draftLevels[r.id] || r.academy_level) ? 'not-allowed' : 'pointer',
+                                opacity: savingId === r.id || !(draftLevels[r.id] || r.academy_level) ? 0.55 : 1,
+                              }}
+                            >
+                              {savingId === r.id ? 'Saving…' : r.academy_level && !r.matric_number ? 'Assign matric' : 'Set level'}
+                            </button>
+                            {rowErrors[r.id] && (
+                              <span style={{ fontSize: '.72rem', color: '#fca5a5', maxWidth: 160 }}>{rowErrors[r.id]}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '.75rem', color: 'var(--text-lo)' }}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

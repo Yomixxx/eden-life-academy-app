@@ -26,14 +26,21 @@ export default async function DashboardPage() {
   const todayDevotion = devotionRes.data
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Friend'
-  const academyEnrollment = enrollments.find(e => e.matric_number)
 
   // For the dashboard's live-class banner: find this student's enrollment in
   // the current cohort course and use its academy level. The banner polls
   // class_links itself, so it lights up within ~20s of the admin going live
   // even if this page rendered earlier.
-  const cohortEnrollment = enrollments.find(e => e.course_id === CURRENT_COHORT_COURSE_ID)
+  // Prefer the current cohort row for matric/level display so an incomplete
+  // cohort registration (no matric yet) still surfaces the "choose level"
+  // / finish-registration card instead of looking like a non-Academy user.
+  const cohortEnrollment = enrollments.find(e => e.course_id === CURRENT_COHORT_COURSE_ID) ?? null
+  const academyEnrollment = cohortEnrollment
+    ?? enrollments.find(e => e.matric_number)
+    ?? null
   const liveClassLevel = cohortEnrollment?.academy_level ?? null
+  const needsLevel = !!cohortEnrollment && !liveClassLevel
+  const needsMatric = !!cohortEnrollment && liveClassLevel && !cohortEnrollment.matric_number
   let liveClassInitial: { level: string; meet_url: string | null; schedule_label: string | null; is_live: boolean } | null = null
   if (liveClassLevel) {
     const { data } = await supabase.from('class_links').select('*').eq('level', liveClassLevel).maybeSingle()
@@ -82,10 +89,11 @@ export default async function DashboardPage() {
           courseHref={`/catalog/${CURRENT_COHORT_COURSE_ID}`}
           initial={liveClassInitial}
         />
-      ) : cohortEnrollment ? (
-        // Registered for the cohort but the enrollment row has no level, so
-        // there is nothing to look up in class_links. Say so and point at the
-        // one screen that fixes it, instead of showing no live class UI at all.
+      ) : null}
+      {(needsLevel || needsMatric) && (
+        // Incomplete cohort registration: no level (join button can't match a
+        // class_links row) and/or no matric. /register finishes both without
+        // asking the student to re-enroll from scratch.
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: '1rem', flexWrap: 'wrap',
@@ -93,16 +101,18 @@ export default async function DashboardPage() {
           borderRadius: 14, padding: '1rem 1.5rem', marginBottom: '1.5rem',
         }}>
           <p style={{ margin: 0, fontSize: '.88rem', color: 'var(--text-md)' }}>
-            You&apos;re registered for the Academy, but we don&apos;t have your level (100/200/300) yet — that&apos;s what your live class join button is matched to.
+            {needsLevel
+              ? 'You\'re registered for the Academy, but we don\'t have your level (100/200/300) yet — that\'s what your live class join button is matched to.'
+              : 'You\'re registered for the Academy, but your matric number hasn\'t been assigned yet. Finish registration to get it.'}
           </p>
           <a href="/register" style={{
             background: 'var(--eden)', color: 'var(--bg-0)', fontSize: '.8rem', fontWeight: 700,
             padding: '.55rem 1.1rem', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap',
           }}>
-            Choose my level
+            {needsLevel ? 'Choose my level' : 'Finish registration'}
           </a>
         </div>
-      ) : null}
+      )}
       {/* Welcome */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '1.75rem 2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(94,201,87,.07), transparent 60%)' }}>
         <div style={{ position: 'absolute', top: -60, right: -40, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(52,211,153,.14), transparent 70%)', pointerEvents: 'none' }} />
@@ -113,7 +123,7 @@ export default async function DashboardPage() {
         <p style={{ marginTop: '.5rem', color: 'var(--text-lo)', fontSize: '.9rem', position: 'relative' }}>
           {enrolledCount > 0 ? 'Continue your discipleship journey where you left off.' : 'Begin your discipleship journey today.'}
         </p>
-        {academyEnrollment && (
+        {academyEnrollment && (academyEnrollment.matric_number || academyEnrollment.academy_level) && (
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '.5rem', marginTop: '1rem', position: 'relative',
             background: 'rgba(94,201,87,.1)', border: '1px solid rgba(94,201,87,.3)',
@@ -122,8 +132,14 @@ export default async function DashboardPage() {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--eden)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 14h4"/>
             </svg>
-            <span style={{ fontSize: '.72rem', color: 'var(--text-lo)' }}>Matric No.</span>
-            <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--eden)', fontFamily: 'monospace' }}>{academyEnrollment.matric_number}</span>
+            {academyEnrollment.matric_number ? (
+              <>
+                <span style={{ fontSize: '.72rem', color: 'var(--text-lo)' }}>Matric No.</span>
+                <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--eden)', fontFamily: 'monospace' }}>{academyEnrollment.matric_number}</span>
+              </>
+            ) : (
+              <span style={{ fontSize: '.78rem', color: 'var(--text-md)' }}>Matric pending</span>
+            )}
             {academyEnrollment.academy_level && (
               <span style={{ fontSize: '.72rem', color: 'var(--text-lo)', paddingLeft: '.4rem', borderLeft: '1px solid var(--border-hi)' }}>{academyEnrollment.academy_level} Level</span>
             )}
