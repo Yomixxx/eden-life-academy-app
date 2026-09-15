@@ -16,10 +16,15 @@ export default async function CoursesPage() {
   const enrolled = enrollments ?? []
 
   // For live class banner on My Courses — same logic as dashboard
+  const metaLevel = (user.user_metadata?.academy_level as string | undefined) ?? null
   const cohortEnrollment = enrolled.find(e => e.course_id === CURRENT_COHORT_COURSE_ID) as any
-  const liveClassLevel = cohortEnrollment?.academy_level ?? null
-  const needsLevel = !!cohortEnrollment && !liveClassLevel
-  const needsMatric = !!cohortEnrollment && liveClassLevel && !(cohortEnrollment as any).matric_number
+  const academyEnrollment = cohortEnrollment
+    ?? enrolled.find((e: any) => e.academy_level || e.matric_number || e.cohort) as any
+  const liveClassLevel = cohortEnrollment?.academy_level
+    ?? academyEnrollment?.academy_level
+    ?? (metaLevel && ['100', '200', '300'].includes(metaLevel) ? metaLevel : null)
+  const needsLevel = (!!cohortEnrollment || !!academyEnrollment) && !liveClassLevel
+  const needsMatric = (!!cohortEnrollment || !!academyEnrollment) && liveClassLevel && !(cohortEnrollment?.matric_number || academyEnrollment?.matric_number)
   let liveClassInitial: { level: string; meet_url: string | null; schedule_label: string | null; is_live: boolean } | null = null
   if (liveClassLevel) {
     const { data } = await supabase.from('class_links').select('*').eq('level', liveClassLevel).maybeSingle()
@@ -138,7 +143,7 @@ export default async function CoursesPage() {
                         <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                       </svg>
                     </a>
-                    {enrollment.course_id === CURRENT_COHORT_COURSE_ID && liveClassLevel && (
+                    {(enrollment.course_id === CURRENT_COHORT_COURSE_ID || enrollment.academy_level) && liveClassLevel && (
                       liveClassInitial?.meet_url ? (
                         <a
                           href={liveClassInitial.meet_url}

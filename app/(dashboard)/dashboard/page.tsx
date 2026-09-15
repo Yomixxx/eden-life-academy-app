@@ -34,13 +34,16 @@ export default async function DashboardPage() {
   // Prefer the current cohort row for matric/level display so an incomplete
   // cohort registration (no matric yet) still surfaces the "choose level"
   // / finish-registration card instead of looking like a non-Academy user.
+  const metaLevel = (user.user_metadata?.academy_level as string | undefined) ?? null
   const cohortEnrollment = enrollments.find(e => e.course_id === CURRENT_COHORT_COURSE_ID) ?? null
   const academyEnrollment = cohortEnrollment
-    ?? enrollments.find(e => e.matric_number)
+    ?? enrollments.find(e => e.academy_level || e.matric_number || e.cohort)
     ?? null
-  const liveClassLevel = cohortEnrollment?.academy_level ?? null
-  const needsLevel = !!cohortEnrollment && !liveClassLevel
-  const needsMatric = !!cohortEnrollment && liveClassLevel && !cohortEnrollment.matric_number
+  const liveClassLevel = cohortEnrollment?.academy_level
+    ?? academyEnrollment?.academy_level
+    ?? (metaLevel && ['100', '200', '300'].includes(metaLevel) ? metaLevel : null)
+  const needsLevel = (!!cohortEnrollment || !!academyEnrollment) && !liveClassLevel
+  const needsMatric = (!!cohortEnrollment || !!academyEnrollment) && liveClassLevel && !(cohortEnrollment?.matric_number || academyEnrollment?.matric_number)
   let liveClassInitial: { level: string; meet_url: string | null; schedule_label: string | null; is_live: boolean } | null = null
   if (liveClassLevel) {
     const { data } = await supabase.from('class_links').select('*').eq('level', liveClassLevel).maybeSingle()
