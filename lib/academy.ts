@@ -28,3 +28,28 @@ export function resolveAcademyLevel(
   }
   return null
 }
+
+/**
+ * True when an Academy/cohort enrollment is missing a valid level and/or
+ * matric number. Plain course enrollments (Growth Steps, etc.) are ignored
+ * unless they sit on the current cohort course — those bare rows are exactly
+ * the "registered with no level and no matric" cases we need to repair.
+ */
+export function isIncompleteAcademyEnrollment(row: {
+  academy_level?: string | null
+  matric_number?: string | null
+  cohort?: string | null
+  course_id?: string | null
+} | null | undefined): boolean {
+  if (!row) return false
+  const onCurrentCohortCourse = row.course_id === CURRENT_COHORT_COURSE_ID
+  const hasAcademySignal = onCurrentCohortCourse
+    || row.cohort != null
+    || row.academy_level != null
+    || row.matric_number != null
+  if (!hasAcademySignal) return false
+  const levelOk = typeof row.academy_level === 'string'
+    && (ACADEMY_LEVELS as readonly string[]).includes(row.academy_level)
+  const matricOk = typeof row.matric_number === 'string' && row.matric_number.length > 0
+  return !levelOk || !matricOk
+}
