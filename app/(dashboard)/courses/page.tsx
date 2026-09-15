@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import LiveClassBanner from '@/components/LiveClassBanner'
+import { CURRENT_COHORT_COURSE_ID } from '@/lib/academy'
 
 export default async function CoursesPage() {
   const supabase = await createClient()
@@ -8,10 +10,21 @@ export default async function CoursesPage() {
 
   const { data: enrollments } = await supabase
     .from('enrollments')
-    .select('course_id, streak_days, last_activity_date, courses(id, title, description, category, level, total_lessons, duration_minutes)')
+    .select('course_id, streak_days, last_activity_date, academy_level, matric_number, courses(id, title, description, category, level, total_lessons, duration_minutes)')
     .eq('user_id', user.id)
 
   const enrolled = enrollments ?? []
+
+  // For live class banner on My Courses — same logic as dashboard
+  const cohortEnrollment = enrolled.find(e => e.course_id === CURRENT_COHORT_COURSE_ID) as any
+  const liveClassLevel = cohortEnrollment?.academy_level ?? null
+  const needsLevel = !!cohortEnrollment && !liveClassLevel
+  const needsMatric = !!cohortEnrollment && liveClassLevel && !(cohortEnrollment as any).matric_number
+  let liveClassInitial: { level: string; meet_url: string | null; schedule_label: string | null; is_live: boolean } | null = null
+  if (liveClassLevel) {
+    const { data } = await supabase.from('class_links').select('*').eq('level', liveClassLevel).maybeSingle()
+    liveClassInitial = data ?? null
+  }
 
   return (
     <div style={{ maxWidth: 1000 }}>
@@ -22,6 +35,35 @@ export default async function CoursesPage() {
         </h1>
         <p style={{ marginTop: '.5rem', color: 'var(--text-lo)', fontSize: '.9rem' }}>Your enrolled courses and learning progress.</p>
       </div>
+
+      {liveClassLevel ? (
+        <LiveClassBanner
+          level={liveClassLevel}
+          courseHref={`/catalog/${CURRENT_COHORT_COURSE_ID}`}
+          initial={liveClassInitial}
+        />
+      ) : null}
+
+      {(needsLevel || needsMatric) && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '1rem', flexWrap: 'wrap',
+          background: 'var(--bg-2)', border: '1px solid rgba(251,191,36,.35)',
+          borderRadius: 14, padding: '1rem 1.5rem', marginBottom: '1.5rem',
+        }}>
+          <p style={{ margin: 0, fontSize: '.88rem', color: 'var(--text-md)' }}>
+            {needsLevel
+              ? 'You\'re registered for the Academy, but we don\'t have your level (100/200/300) yet — that\'s what your live class join button is matched to.'
+              : 'You\'re registered for the Academy, but your matric number hasn\'t been assigned yet. Finish registration to get it.'}
+          </p>
+          <a href="/register" style={{
+            background: 'var(--eden)', color: 'var(--bg-0)', fontSize: '.8rem', fontWeight: 700,
+            padding: '.55rem 1.1rem', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap',
+          }}>
+            {needsLevel ? 'Choose my level' : 'Finish registration'}
+          </a>
+        </div>
+      )}
 
       {enrolled.length === 0 ? (
         <div style={{
@@ -85,16 +127,46 @@ export default async function CoursesPage() {
                     {course.duration_minutes && <span>{Math.round(course.duration_minutes / 60)}h {course.duration_minutes % 60}m</span>}
                     {course.level && <span style={{ textTransform: 'capitalize' }}>{course.level}</span>}
                   </div>
-                  <a href={`/catalog/${course.id}`} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '.4rem',
-                    fontSize: '.82rem', fontWeight: 600, color: 'var(--eden)',
-                    textDecoration: 'none',
-                  }}>
-                    Continue
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                    </svg>
-                  </a>
+                  <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <a href={`/catalog/${course.id}`} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '.4rem',
+                      fontSize: '.82rem', fontWeight: 600, color: 'var(--eden)',
+                      textDecoration: 'none',
+                    }}>
+                      Continue
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                      </svg>
+                    </a>
+                    {enrollment.course_id === CURRENT_COHORT_COURSE_ID && liveClassLevel && (
+                      liveClassInitial?.meet_url ? (
+                        <a
+                          href={liveClassInitial.meet_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '.4rem',
+                            fontSize: '.8rem', fontWeight: 700,
+                            padding: '.45rem .85rem', borderRadius: 8, textDecoration: 'none',
+                            background: liveClassInitial.is_live ? '#ef4444' : 'var(--bg-3)',
+                            color: liveClassInitial.is_live ? '#fff' : 'var(--text-md)',
+                          }}
+                        >
+                          {liveClassInitial.is_live ? 'Join Class' : 'Join Class — Not live yet'}
+                        </a>
+                      ) : (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center',
+                          fontSize: '.8rem', fontWeight: 700,
+                          padding: '.45rem .85rem', borderRadius: 8,
+                          background: 'var(--bg-3)', color: 'var(--text-lo)',
+                          border: '1px solid var(--border)',
+                        }}>
+                          Join Class
+                        </span>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
             )
